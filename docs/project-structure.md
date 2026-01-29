@@ -133,11 +133,8 @@ pages-project/
 │   └── templates/
 │       └── pages-viewlogic.md
 ├── CLAUDE.md
-├── package.json
-├── vite.config.js
-├── public/                   # 정적 파일
-│   ├── favicon.ico
-│   └── images/
+├── index.html
+├── favicon.ico
 ├── src/
 │   ├── main.js              # 엔트리 포인트
 │   ├── router.js            # ViewLogic Router
@@ -161,6 +158,7 @@ pages-project/
 │       └── client.js
 ├── css/
 │   └── base.css             # 모든 CSS 여기에!
+├── images/
 └── functions/               # Pages Functions (API)
     └── api/
         └── [[path]].js
@@ -202,6 +200,10 @@ malgn-project/
 │       └── crud-insert.md
 ├── CLAUDE.md
 ├── public_html/
+│   ├── css/
+│   │   └── base.css
+│   ├── js/
+│   │   └── common.js
 │   ├── WEB-INF/
 │   │   ├── config.xml       # 프레임워크 설정
 │   │   ├── lib/
@@ -229,15 +231,12 @@ malgn-project/
 │       └── member/
 │           ├── login.html
 │           └── register.html
-├── src/
-│   └── dao/                 # DAO 클래스
-│       ├── UserDao.java
-│       ├── BoardDao.java
-│       └── ProductDao.java
-├── css/
-│   └── base.css
-└── js/
-    └── common.js
+└── src/
+    └── dao/                 # DAO 클래스
+        ├── UserDao.java
+        ├── BoardDao.java
+        └── ProductDao.java
+
 ```
 
 ### 파일 명명 규칙
