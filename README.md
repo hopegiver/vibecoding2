@@ -97,13 +97,14 @@ AI: 파일을 직접 읽고, 코드를 작성하고, 테스트하고, 커밋까�
 ```
 
 ### 2. 컨텍스트 관리
-AI가 프로젝트를 정확히 이해하도록 **`.claude/` 폴더**로 규칙을 정의합니다.
+AI가 프로젝트를 정확히 이해하도록 **프로젝트 루트와 `.claude/` 폴더**로 규칙을 정의합니다.
 
 ```
+CLAUDE.md           # 프로젝트 개요 (루트에 위치)
 .claude/
 ├── rules/          # 코딩 규칙
 ├── templates/      # 코드 템플릿
-└── CLAUDE.md       # 프로젝트 개요
+└── memory/         # 작업 이력 및 상태
 ```
 
 ### 3. 플랫폼별 최적화
@@ -145,6 +146,8 @@ Claude Code를 열고 물어보세요:
 ### ⚙️ 설정
 - [.claude/rules 작성](docs/claude-rules.md) - 코딩 규칙 정의
 - [CLAUDE.md 작성](docs/claude-md.md) - 프로젝트 개요
+- [.claude/memory 활용](docs/claude-memory.md) - 작업 이력 관리
+- [.claude/commands 활용](docs/claude-commands.md) - 슬래시 커맨드
 - [MCP 서버 설정](docs/mcp-setup.md) - 사내 문서 연동
 
 ### 📝 프롬프트 패턴
