@@ -80,10 +80,33 @@ Settings 화면에서 **"MCP Servers"** 또는 **"Model Context Protocol"** 섹�
 
 **Step 4: 서버 설정 입력**
 
+**API 서버 방식 (권장):**
+
 ```json
 {
   "mcpServers": {
     "malgn-docs": {
+      "url": "https://mcp.malgnsoft.com/docs",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_TOKEN"
+      }
+    },
+    "company-wiki": {
+      "url": "https://mcp.malgnsoft.com/wiki",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_TOKEN"
+      }
+    }
+  }
+}
+```
+
+**파일시스템 방식 (로컬 문서):**
+
+```json
+{
+  "mcpServers": {
+    "local-docs": {
       "command": "npx",
       "args": [
         "-y",
@@ -104,7 +127,12 @@ Settings 화면에서 **"MCP Servers"** 또는 **"Model Context Protocol"** 섹�
 
 채팅창에서 테스트:
 ```
-@malgn-docs에서 문서 목록을 보여줘
+@malgn-docs에서 Page 클래스 사용법을 알려줘
+```
+
+또는
+```
+@company-wiki에서 보안 가이드를 확인해줘
 ```
 
 ### 방법 2: 설정 파일 직접 편집
@@ -125,10 +153,33 @@ Settings 화면에서 **"MCP Servers"** 또는 **"Model Context Protocol"** 섹�
 
 **파일: `mcp-servers.json`**
 
+**API 서버 방식:**
+
 ```json
 {
   "mcpServers": {
-    "filesystem-docs": {
+    "malgn-docs": {
+      "url": "https://mcp.malgnsoft.com/docs",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_TOKEN"
+      }
+    },
+    "company-wiki": {
+      "url": "https://mcp.malgnsoft.com/wiki",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_TOKEN"
+      }
+    }
+  }
+}
+```
+
+**파일시스템 방식 (로컬 개발용):**
+
+```json
+{
+  "mcpServers": {
+    "local-docs": {
       "command": "npx",
       "args": [
         "-y",
@@ -142,384 +193,71 @@ Settings 화면에서 **"MCP Servers"** 또는 **"Model Context Protocol"** 섹�
 
 **Step 3: Claude Code 재시작**
 
-## 실전 예제
-
-### 예제 1: 맑은프레임워크 문서 연동
-
-회사에 맑은프레임워크 매뉴얼이 `G:\docs\malgn\` 폴더에 있다고 가정합니다.
-
-**설정:**
-
-```json
-{
-  "mcpServers": {
-    "malgn-docs": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "G:\\docs\\malgn"
-      ]
-    }
-  }
-}
-```
-
-**사용:**
-
-```
-프롬프트: "@malgn-docs에서 Page 클래스의 setLoop 메소드 사용법을 찾아서
-사용자 목록 페이지를 만들어줘"
-```
-
-**Claude Code 동작:**
-1. `G:\docs\malgn\` 폴더에서 `setLoop` 관련 문서 검색
-2. 정확한 사용법 확인
-3. 맑은프레임워크 규칙을 따르는 코드 생성
-
-### 예제 2: Confluence 위키 연동
-
-사내 Confluence에 개발 가이드가 있는 경우:
-
-**설정:**
-
-```json
-{
-  "mcpServers": {
-    "company-wiki": {
-      "command": "node",
-      "args": [
-        "/path/to/confluence-mcp-server.js"
-      ],
-      "env": {
-        "CONFLUENCE_URL": "https://wiki.company.com",
-        "CONFLUENCE_TOKEN": "your-api-token"
-      }
-    }
-  }
-}
-```
-
-**사용:**
-
-```
-프롬프트: "@company-wiki에서 JWT 인증 가이드를 찾아서 로그인 API를 만들어줘"
-```
-
-### 예제 3: GitHub 저장소 연동
-
-프레임워크 소스 코드를 참조:
-
-```json
-{
-  "mcpServers": {
-    "framework-source": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-github",
-        "--repo",
-        "company/malgn-framework"
-      ],
-      "env": {
-        "GITHUB_TOKEN": "your-github-token"
-      }
-    }
-  }
-}
-```
-
-**사용:**
-
-```
-프롬프트: "@framework-source에서 DataSet 클래스 구현을 참고해서
-커스텀 ResultSet 클래스를 만들어줘"
-```
-
-## MCP 서버 구축
-
-맑은소프트에서는 **Cloudflare Workers 기반 MCP 서버**를 구축하여 사용합니다.
-
-**구축 담당:** 맑은소프트 개발팀
-**사용 방법:** 개발팀이 제공하는 MCP 서버 URL을 설정에 추가
-
-구체적인 구축 방법은 별도 문서 참조.
-
-## MCP 활용 패턴
-
-### 패턴 1: 문서 우선 개발
-
-**사내 표준 자동 준수**
-
-```
-프롬프트: "@malgn-docs와 @company-wiki를 참고해서
-맑은프레임워크 기반 사용자 관리 모듈을 만들어줘.
-
-요구사항:
-- 사내 코딩 표준 준수
-- 맑은프레임워크 패턴 사용
-- 보안 가이드 적용
-
-파일:
-- public_html/user/user_list.jsp
-- public_html/user/user_form.jsp
-- src/dao/UserDao.java
-```
-
-**효과:**
-- ✅ 매뉴얼 찾아보는 시간 절약
-- ✅ 표준 패턴 자동 적용
-- ✅ 일관된 코드 품질
-
-### 패턴 2: 기존 코드 학습 및 확장
-
-**기존 패턴 분석 후 복제**
-
-```
-프롬프트: "@framework-source에서 기존 UserDao 클래스를 분석하고,
-동일한 패턴으로 ProductDao 클래스를 만들어줘.
-
-포함 기능:
-- findAll (페이징)
-- findById
-- insert
-- update
-- delete
-- search (제품명, 카테고리)
-```
-
-**효과:**
-- ✅ 프로젝트 코딩 스타일 자동 유지
-- ✅ 검증된 패턴 재사용
-- ✅ 신규 개발자도 일관된 코드 작성
-
-### 패턴 3: API 스펙 기반 개발
-
-**OpenAPI/Swagger 스펙 자동 구현**
-
-```
-프롬프트: "@api-specs의 /api/products OpenAPI 스펙을 읽고,
-모든 엔드포인트를 구현해줘.
-
-Workers 구조:
-- src/routes/products.js
-- src/services/productService.js
-- D1 데이터베이스 사용
-- JWT 인증 적용
-```
-
-**효과:**
-- ✅ 스펙과 구현 자동 일치
-- ✅ 빠뜨린 엔드포인트 없음
-- ✅ 프론트엔드와 즉시 연동 가능
-
-### 패턴 4: 다중 문서 통합 참조
-
-**여러 문서를 동시에 활용**
-
-```
-프롬프트: "@malgn-docs의 DataSet 사용법과
-@company-wiki의 보안 가이드를 참고하여
-게시판 목록 조회 기능을 만들어줘.
-
-보안 요구사항:
-- XSS 필터링 (m.rs 사용)
-- SQL Injection 방지 (PreparedStatement)
-- 권한 체크 (Auth.isLogin)
-
-기능:
-- 페이징 (ListManager)
-- 검색 (제목+내용)
-- 정렬 (최신순, 조회수순)
-```
-
-**효과:**
-- ✅ 여러 표준을 동시에 적용
-- ✅ 보안과 기능 모두 충족
-- ✅ 복잡한 요구사항 한 번에 해결
-
-### 패턴 5: 레거시 마이그레이션
-
-**기존 시스템 분석 후 현대화**
-
-```
-프롬프트: "@legacy-code에서 기존 JSP 직접 SQL 코드를 분석하고,
-@malgn-docs의 DAO 패턴으로 리팩토링해줘.
-
-기존: board_list.jsp (JSP에서 직접 SQL)
-신규:
-- src/dao/BoardDao.java (DAO 패턴)
-- board_list.jsp (깔끔한 JSP, HTML 템플릿 분리)
-```
-
-**효과:**
-- ✅ 레거시 코드 자동 분석
-- ✅ 현대 패턴으로 안전하게 전환
-- ✅ 실수 없이 마이그레이션
-
-### 패턴 6: 실시간 문서 동기화
-
-**최신 프레임워크 버전 자동 반영**
-
-```
-프롬프트: "@malgn-docs에서 최신 1.15.0 버전의 새 기능을 확인하고,
-기존 코드에 적용 가능한 부분을 알려줘.
-
-체크 항목:
-- 성능 개선 기능
-- 보안 강화 기능
-- Deprecated 메소드
-```
-
-**효과:**
-- ✅ 최신 기능 자동 인지
-- ✅ 기술 부채 방지
-- ✅ 업그레이드 계획 자동 수립
-
-## MCP 활용 극대화 팁
+## MCP 활용 팁
 
 ### 1. 구체적인 문서 위치 명시
 
-**❌ 나쁜 예:**
-```
-"문서 참고해서 만들어줘"
-```
+**나쁜 예:** "문서 참고해서 만들어줘"
 
-**✅ 좋은 예:**
-```
-"@malgn-docs의 'Page 클래스 사용법' 섹션과
-@company-wiki의 '템플릿 엔진 가이드'를 참고해서 만들어줘"
-```
+**좋은 예:** "@malgn-docs의 'Page 클래스 사용법'과 @company-wiki의 '템플릿 엔진 가이드'를 참고해서 만들어줘"
 
 ### 2. 여러 MCP 서버 조합
 
-**시너지 효과 극대화:**
+여러 문서를 동시에 참조하여 통합 개발:
 
 ```
-프롬프트:
 "@malgn-docs에서 프레임워크 패턴을 참고하고,
-@company-wiki에서 사내 보안 규칙을 확인하고,
-@api-specs에서 API 계약을 읽어서
-완전한 인증 모듈을 만들어줘"
+@company-wiki에서 보안 규칙을 확인하고,
+@api-specs에서 API 스펙을 읽어서 인증 모듈을 만들어줘"
 ```
 
-**3가지 정보원을 통합:**
-- 프레임워크 패턴 (기술)
-- 사내 보안 규칙 (정책)
-- API 스펙 (계약)
+**효과:** 기술 + 정책 + 계약을 한 번에 적용
 
-### 3. 컨텍스트 우선순위 설정
+### 3. 우선순위 설정
 
-**명확한 우선순위 지정:**
+충돌 가능성이 있을 때 우선순위 명시:
 
 ```
-프롬프트:
 "@company-wiki의 보안 규칙을 최우선으로 하고,
 @malgn-docs의 코딩 패턴을 따라서 만들어줘.
-
-단, 보안 규칙과 프레임워크 패턴이 충돌하면
-반드시 보안 규칙을 따라야 해."
+보안 규칙과 충돌하면 반드시 보안 규칙을 따라야 해."
 ```
 
-### 4. 점진적 학습 활용
+### 4. 점진적 학습
 
-**단계별 문서 참조:**
-
-```
-Step 1:
-"@malgn-docs에서 기본 CRUD 패턴만 참고해서 기본 구조를 만들어줘"
-
-Step 2:
-"@company-wiki에서 캐싱 전략을 추가로 참고해서 성능 최적화해줘"
-
-Step 3:
-"@api-specs에서 검색 API 스펙을 읽고 고급 검색 기능을 추가해줘"
-```
-
-### 5. 질문형 활용
-
-**문서 내용 확인 후 작업:**
+단계별로 문서를 참조하여 기능 확장:
 
 ```
-프롬프트:
-"@malgn-docs에서 DataSet.next()를 어떻게 사용하는지 먼저 확인해줘.
+Step 1: "@malgn-docs에서 기본 CRUD 패턴만 참고해서 구조를 만들어줘"
+Step 2: "@company-wiki에서 캐싱 전략을 추가로 참고해서 최적화해줘"
+Step 3: "@api-specs에서 검색 API 스펙을 읽고 고급 검색을 추가해줘"
+```
+
+### 5. 문서 기반 검증
+
+작성한 코드를 문서 기준으로 검증:
+
+```
+"방금 코드를 @malgn-docs와 @company-wiki 기준으로 검증하고,
+위반 사항이 있으면 수정해줘."
+```
+
+### 6. 기존 코드 학습 및 확장
+
+프로젝트의 기존 패턴을 학습하여 일관성 유지:
+
+```
+"@framework-source에서 UserDao를 분석하고,
+동일한 패턴으로 ProductDao를 만들어줘."
+```
+
+### 7. 질문형 활용
+
+불확실할 때는 먼저 문서 확인 후 작업:
+
+```
+"@malgn-docs에서 DataSet.next() 사용법을 먼저 확인해줘.
 그 다음 사용자 목록 조회 코드를 작성해줘."
-```
-
-**2단계 프로세스:**
-1. 문서에서 정확한 사용법 확인
-2. 확인한 내용으로 코드 작성
-
-### 6. 네거티브 프롬프트
-
-**하지 말아야 할 것 명시:**
-
-```
-프롬프트:
-"@company-wiki의 금지 패턴 목록을 확인하고,
-절대 사용하지 말고 사용자 등록 API를 만들어줘.
-
-특히:
-- try-catch 사용 금지
-- JSP에 HTML 직접 작성 금지
-- SQL Injection 취약 패턴 금지"
-```
-
-### 7. 검증 요청
-
-**문서 기준으로 코드 리뷰:**
-
-```
-프롬프트:
-"방금 작성한 코드를 @malgn-docs와 @company-wiki를 기준으로
-검증해줘.
-
-체크 항목:
-- 프레임워크 패턴 준수 여부
-- 보안 규칙 준수 여부
-- 성능 최적화 적용 여부
-
-위반 사항이 있으면 즉시 수정해줘."
-```
-
-### 8. 버전별 문서 활용
-
-**특정 버전 명시:**
-
-```
-프롬프트:
-"@malgn-docs-v1.14에서 구버전 DataSet 사용법을 확인하고,
-@malgn-docs-v1.15에서 신버전 DataSet 사용법을 비교해줘.
-
-그리고 마이그레이션 가이드를 작성해줘."
-```
-
-### 9. 실시간 업데이트 활용
-
-**최신 정보 자동 반영:**
-
-```
-프롬프트:
-"@company-wiki에서 오늘 업데이트된 보안 패치 내용을 확인하고,
-기존 인증 코드에 즉시 적용해줘."
-```
-
-### 10. 템플릿 생성 요청
-
-**문서 기반 재사용 템플릿:**
-
-```
-프롬프트:
-"@malgn-docs의 CRUD 패턴을 분석해서
-앞으로 재사용할 수 있는 DAO 템플릿을 templates/DaoTemplate.java로
-만들어줘.
-
-포함 사항:
-- 기본 CRUD 메소드
-- 페이징
-- 검색
-- 정렬
-- 주석 (JavaDoc)"
 ```
 
 ## 문제 해결

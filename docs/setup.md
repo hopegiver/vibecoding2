@@ -19,13 +19,6 @@ Claude Code를 사용하기 위한 **최적의 개발 환경**을 설정하는 �
 brew install --cask visual-studio-code
 ```
 
-### Linux (Ubuntu/Debian)
-
-```bash
-sudo apt update
-sudo apt install code
-```
-
 ## 2. Claude Code 확장 설치
 
 ### 방법 1: VSCode Marketplace
@@ -61,11 +54,6 @@ Claude Code는 Git과 긴밀하게 통합됩니다.
 **macOS:**
 ```bash
 brew install git
-```
-
-**Linux:**
-```bash
-sudo apt install git
 ```
 
 ### Git 사용자 정보 설정
@@ -140,37 +128,34 @@ npm install -D wrangler
 **Cloudflare Pages:**
 ```bash
 npm install vue@3
-npm install -D vite
+npm install -D @viewlogic/cli
 ```
 
 ### Java 프로젝트 (맑은프레임워크)
 
 #### JDK 설치
 
-**권장 버전:** JDK 11 이상
+**권장 버전:** JDK 8 이상
 
 ```bash
 # Windows: Chocolatey 사용
-choco install openjdk11
+choco install openjdk8
 
 # macOS
-brew install openjdk@11
-
-# Linux
-sudo apt install openjdk-11-jdk
+brew install openjdk@8
 ```
 
 #### 환경 변수 설정
 
 **Windows:**
 ```
-JAVA_HOME=C:\Program Files\Java\jdk-11
+JAVA_HOME=C:\Program Files\Java\jdk-8
 Path=%JAVA_HOME%\bin;...
 ```
 
 **macOS/Linux:**
 ```bash
-export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk
 export PATH=$JAVA_HOME/bin:$PATH
 ```
 
@@ -193,40 +178,50 @@ Claude Code와 함께 사용하면 좋은 확장들:
 
 **Java:**
 - Extension Pack for Java
-- Spring Boot Extension Pack
 
-## 6. MCP 서버 설정 (선택)
+## 6. 데이터베이스 설정
 
-MCP(Model Context Protocol)를 사용하면 **사내 문서, Wiki, API 스펙**을 Claude Code에 연동할 수 있습니다.
+### MySQL 설치
 
-### MCP 서버 설정 파일
+맑은소프트 프로젝트는 **MySQL**을 기본 데이터베이스로 사용합니다.
 
-`~/.config/claude-code/mcp-config.json` (macOS/Linux)
-`%APPDATA%\claude-code\mcp-config.json` (Windows)
+**Windows:**
+- [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) 다운로드 및 설치
 
-```json
-{
-  "servers": {
-    "company-wiki": {
-      "url": "https://wiki.company.com/api",
-      "apiKey": "your-api-key",
-      "description": "회사 내부 위키"
-    },
-    "framework-docs": {
-      "url": "https://docs.company.com/malgn",
-      "description": "맑은프레임워크 문서"
-    }
+**macOS:**
+```bash
+brew install mysql
+brew services start mysql
+```
+
+### Cloudflare Hyperdrive 연동 (Workers)
+
+Workers 프로젝트에서는 **Hyperdrive**를 통해 MySQL에 연결합니다.
+
+#### wrangler.toml 설정
+
+```toml
+name = "my-worker"
+main = "src/index.js"
+
+[[hyperdrive]]
+binding = "DB"
+id = "your-hyperdrive-id"
+```
+
+#### 사용 예시
+
+```javascript
+export default {
+  async fetch(request, env) {
+    const db = env.DB;
+    const results = await db.query('SELECT * FROM users');
+    return Response.json(results);
   }
 }
 ```
 
-### 사용 방법
-
-```
-프롬프트: "@company-wiki 에서 인증 방식을 찾아서 로그인 API를 만들어줘"
-```
-
-자세한 내용은 [MCP 서버 설정 및 활용](mcp-setup.md) 참조.
+자세한 내용은 [Cloudflare Hyperdrive 문서](https://developers.cloudflare.com/hyperdrive/) 참조.
 
 ## 7. 프로젝트 초기 구조
 
@@ -265,18 +260,22 @@ mkdir -p .claude/templates
 
 ```bash
 # .env (Git에 포함하지 말 것!)
-DATABASE_URL=postgresql://localhost:5432/mydb
+DATABASE_URL=mysql://user:password@localhost:3306/mydb
 API_KEY=your-secret-key
 JWT_SECRET=your-jwt-secret
+
+# Cloudflare (Workers)
+HYPERDRIVE_ID=your-hyperdrive-id
 ```
 
 ### .env.example 파일
 
 ```bash
 # .env.example (Git에 포함)
-DATABASE_URL=
+DATABASE_URL=mysql://user:password@localhost:3306/dbname
 API_KEY=
 JWT_SECRET=
+HYPERDRIVE_ID=
 ```
 
 ## 9. 설정 확인

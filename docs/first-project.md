@@ -76,7 +76,7 @@ mkdir -p .claude/templates
 ## 프로젝트 개요
 Cloudflare Workers 기반 REST API 서버. 사용자(User) 관리 기능 제공.
 
-**기술 스택:** Hono + D1 + KV
+기술 스택: Hono + D1 + KV
 
 ## 프로젝트 구조
 \`\`\`
@@ -87,10 +87,10 @@ src/
 \`\`\`
 
 ## 핵심 규칙
-1. **서비스는 클래스 기반으로 작성**
-2. **라우트에는 비즈니스 로직 금지**
-3. **파일명은 camelCase**
-4. **KV 캐시 우선 사용 (TTL: 1시간)**
+- 서비스는 클래스 기반으로 작성
+- 라우트에는 비즈니스 로직 금지
+- 파일명은 camelCase
+- KV 캐시 우선 사용 (TTL: 1시간)
 
 ## 현재 작업
 - 사용자 CRUD API 구현 중
@@ -103,34 +103,16 @@ src/
 ```markdown
 # Workers 아키텍처 규칙
 
-## 레이어 구조
-\`\`\`
-Request → Route → Service → D1/KV → Response
-\`\`\`
+## 필수 사항
+- 레이어 구조: Request → Route → Service → D1/KV → Response
+- 서비스는 클래스 기반으로 작성
+- KV 캐시 우선 사용, D1은 백업
+- 비동기 함수는 async/await 사용
 
-## 서비스 패턴 (필수)
-\`\`\`javascript
-export class UserService {
-  constructor(env) { this.env = env; }
-
-  async getUser(id) {
-    // KV 캐시 확인
-    const cached = await this.env.KV.get(\`user:\${id}\`, { type: 'json' });
-    if (cached) return cached;
-
-    // D1 조회
-    const user = await this.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
-
-    // 캐시 저장
-    if (user) await this.env.KV.put(\`user:\${id}\`, JSON.stringify(user), { expirationTtl: 3600 });
-    return user;
-  }
-}
-\`\`\`
-
-## 🚫 금지 사항
+## 금지 사항
 - 라우트에서 직접 DB 접근 금지
-- 비동기 함수는 async/await 사용 (Promise then/catch 금지)
+- Promise then/catch 사용 금지
+- 비즈니스 로직을 라우트에 작성 금지
 ```
 
 ---

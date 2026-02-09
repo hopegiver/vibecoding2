@@ -12,6 +12,7 @@
 project-root/
 ├── .claude/                # Claude Code 설정
 │   ├── rules/             # 개발 규칙
+│   ├── commands/          # 슬래시 커맨드
 │   ├── templates/         # 코드 템플릿
 │   └── memory/            # 작업 이력 (선택)
 ├── CLAUDE.md              # 프로젝트 컨텍스트
@@ -29,6 +30,10 @@ project-root/
 │   ├── coding-conventions.md   # 코딩 컨벤션
 │   ├── style-guide.md          # 스타일 가이드
 │   └── security.md             # 보안 규칙
+├── commands/
+│   ├── crud.md                # CRUD 생성 커맨드
+│   ├── page.md                # 페이지 생성 커맨드
+│   └── review.md              # 코드 리뷰 커맨드
 ├── templates/
 │   ├── crud-list.md           # 목록 페이지 템플릿
 │   ├── crud-insert.md         # 등록 페이지 템플릿
@@ -39,11 +44,6 @@ project-root/
     ├── history.md             # 작업 이력
     └── next-tasks.md          # 다음 할 일
 ```
-
-**크기 권장:**
-- `.claude/rules/`: 전체 10,000-15,000 토큰
-- `CLAUDE.md`: 3,000-5,000 토큰
-- `.claude/templates/`: 필요한 만큼 (자주 쓰는 5-10개)
 
 ---
 
@@ -57,6 +57,8 @@ workers-project/
 │   ├── rules/
 │   │   ├── architecture.md
 │   │   └── coding-conventions.md
+│   ├── commands/
+│   │   └── crud.md
 │   └── templates/
 │       └── api-endpoint.md
 ├── CLAUDE.md
@@ -130,6 +132,8 @@ pages-project/
 │   ├── rules/
 │   │   ├── viewlogic-guide.md
 │   │   └── style-guide.md
+│   ├── commands/
+│   │   └── page.md
 │   └── templates/
 │       └── pages-viewlogic.md
 ├── CLAUDE.md
@@ -195,6 +199,8 @@ malgn-project/
 │   ├── rules/
 │   │   ├── core-principles.md
 │   │   └── coding-rules.md
+│   ├── commands/
+│   │   └── crud.md
 │   └── templates/
 │       ├── crud-list.md
 │       └── crud-insert.md
@@ -256,56 +262,6 @@ malgn-project/
 - JSP에 HTML 작성
 - try-catch 사용
 - POST 처리 후 return 없음
-
----
-
-## 파일 조직화 원칙
-
-### 1. 기능별 폴더 구조 (권장)
-
-```
-src/
-├── auth/                    # 인증 관련
-│   ├── routes.js
-│   ├── service.js
-│   └── middleware.js
-├── users/                   # 사용자 관련
-│   ├── routes.js
-│   ├── service.js
-│   └── validators.js
-└── products/                # 제품 관련
-    ├── routes.js
-    ├── service.js
-    └── validators.js
-```
-
-**장점:**
-- 관련 파일이 한 곳에
-- 모듈 단위로 관리 용이
-- 재사용 쉬움
-
-### 2. 레이어별 폴더 구조
-
-```
-src/
-├── routes/
-│   ├── auth.js
-│   ├── users.js
-│   └── products.js
-├── services/
-│   ├── authService.js
-│   ├── userService.js
-│   └── productService.js
-└── validators/
-    ├── authValidators.js
-    └── userValidators.js
-```
-
-**장점:**
-- 아키텍처 레이어 명확
-- 파일 찾기 쉬움
-
-**권장:** 소규모 프로젝트는 레이어별, 대규모는 기능별
 
 ---
 

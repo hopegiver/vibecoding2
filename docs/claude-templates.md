@@ -19,578 +19,213 @@
 - ✅ 실수 방지
 - ✅ 베스트 프랙티스 공유
 
-## 적정 크기 가이드
+## 템플릿 작성 원칙
 
-### 권장 크기
-- **개별 템플릿 파일**: 1,000-2,000 토큰 (약 3,000-6,000자)
-- **전체 templates 폴더**: 필요한 만큼 (자주 쓰는 패턴만)
+### 기본 구조
 
-### 토큰 수 확인
-- [OpenAI Tokenizer](https://platform.openai.com/tokenizer) 사용
-- 한글 기준: 글자 수 × 3 ≈ 토큰 수
-
-### 크기 관리 팁
-- 템플릿은 필요할 때만 Claude Code가 참조
-- 너무 많은 템플릿보다 핵심 패턴만 유지
-- 5-10개 정도의 템플릿이 적당
-
-## 실전 예제
-
-### 예제 1: 맑은프레임워크 CRUD 템플릿
-
-**파일: `.claude/templates/crud-list.md`**
+템플릿 파일은 **Markdown 형식**으로 작성하며 다음 구조를 권장합니다:
 
 ```markdown
-# 목록 페이지 템플릿 (맑은프레임워크)
+# 템플릿 제목
 
 ## 사용 방법
-이 템플릿을 사용하여 새로운 목록 페이지를 생성하세요.
-플레이스홀더를 실제 값으로 변경하세요:
-- {{entity}}: 엔티티명 (예: User, Board)
-- {{table}}: 테이블명 (예: tb_user, tb_board)
-- {{fields}}: 검색 필드 (예: name,email)
+- 이 템플릿의 목적과 사용 시기
+- 플레이스홀더 설명
 
-## JSP 파일: /{{folder}}/{{entity}}_list.jsp
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-// 검색 키워드
-String keyword = m.rs("keyword");
-
-// 페이징 사용
-ListManager lm = new ListManager();
-lm.setRequest(request);
-lm.setTable("{{table}}");
-lm.setListNum(20);
-
-// 검색 조건
-if(!"".equals(keyword)) {
-    lm.addSearch("{{fields}}", keyword, "LIKE");
-}
-
-lm.setOrderBy("id DESC");
-DataSet list = lm.getDataSet();
-String paging = lm.getPaging();
-
-// 템플릿 설정
-p.setLayout("default");
-p.setBody("{{folder}}.{{entity}}_list");
-p.setVar("keyword", keyword);
-p.setVar("paging", paging);
-p.setLoop("list", list);
-p.display();
-%>
+## 파일 1: 경로/파일명
+\`\`\`언어
+실제 코드 내용
 \`\`\`
 
-## HTML 템플릿: /html/{{folder}}/{{entity}}_list.html
-
-\`\`\`html
-<div class="container">
-    <h1>{{entity}} 목록</h1>
-
-    <!-- 검색 폼 -->
-    <form method="get" class="mb-3">
-        <div class="input-group">
-            <input type="text" name="keyword" value="{{keyword}}"
-                   class="form-control" placeholder="검색어 입력">
-            <button type="submit" class="btn btn-primary">검색</button>
-        </div>
-    </form>
-
-    <!-- 목록 테이블 -->
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>제목</th>
-                <th>등록일</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!--@loop(list)-->
-            <tr>
-                <td>{{list.id}}</td>
-                <td><a href="{{entity}}_view.jsp?id={{list.id}}">{{list.title}}</a></td>
-                <td>{{list.reg_date}}</td>
-            </tr>
-            <!--/loop(list)-->
-        </tbody>
-    </table>
-
-    <!-- 페이징 -->
-    <div class="text-center">
-        {{paging}}
-    </div>
-
-    <!-- 등록 버튼 -->
-    <div class="text-end">
-        <a href="{{entity}}_insert.jsp" class="btn btn-primary">등록</a>
-    </div>
-</div>
-\`\`\`
-
-## DAO 파일: /src/dao/{{entity}}Dao.java
-
-\`\`\`java
-package dao;
-
-import malgnsoft.db.DataObject;
-
-public class {{entity}}Dao extends DataObject {
-    public {{entity}}Dao() {
-        this.table = "{{table}}";
-    }
-}
+## 파일 2: 경로/파일명
+\`\`\`언어
+실제 코드 내용
 \`\`\`
 ```
 
-**파일: `.claude/templates/crud-insert.md`**
+### 포함할 내용
 
-```markdown
-# 등록 페이지 템플릿 (맑은프레임워크)
+각 템플릿은 다음 요소를 포함해야 합니다:
 
-## 사용 방법
-Postback 패턴을 사용한 등록 페이지입니다.
+**1. 명확한 설명**
+- 템플릿의 목적
+- 언제 사용하는지
+- 플레이스홀더 설명
 
-## JSP 파일: /{{folder}}/{{entity}}_insert.jsp
+**2. 완전한 코드**
+- 실제 작동하는 코드
+- 필수 import/include
+- 기본 에러 처리
 
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
+**3. 필수 보안 요소**
+- 입력 검증
+- XSS 방지
+- SQL Injection 방지
+- 권한 체크
 
-// 유효성 검증 설정
-f.addElement("title", null, "required:Y, maxLen:100");
-f.addElement("content", null, "required:Y");
+**4. 주석**
+- 핵심 로직 설명
+- 플레이스홀더 위치 표시
 
-// POST 처리 (등록)
-if(m.isPost() && f.validate()) {
-    {{entity}}Dao dao = new {{entity}}Dao();
-    dao.item("title", f.get("title"));
-    dao.item("content", f.get("content"));
-    dao.item("user_id", userId);
-    dao.item("reg_date", m.time());
+## 플레이스홀더 규칙
 
-    if(dao.insert()) {
-        m.jsAlert("등록되었습니다.");
-        m.jsReplace("{{entity}}_list.jsp");
-    } else {
-        m.jsError("등록 실패: " + dao.getErrMsg());
-    }
-    return;
-}
+템플릿에서 변경 가능한 부분은 `{{플레이스홀더}}` 형식으로 표시합니다.
 
-// GET 처리 (폼 표시)
-p.setLayout("default");
-p.setBody("{{folder}}.{{entity}}_form");
-p.setVar("is_insert", true);
-p.setVar("form_script", f.getScript());
-p.display();
-%>
-\`\`\`
+### 네이밍 컨벤션
 
-## HTML 템플릿: /html/{{folder}}/{{entity}}_form.html
+**엔티티/리소스명:**
+- `{{entity}}`: camelCase (예: userProfile, productItem)
+- `{{Entity}}`: PascalCase (예: UserProfile, ProductItem)
+- `{{ENTITY}}`: UPPER_CASE (예: USER_PROFILE, PRODUCT_ITEM)
 
-\`\`\`html
-<div class="container">
-    <h1>{{entity}} 등록</h1>
+**데이터베이스:**
+- `{{table}}`: snake_case (예: tb_user, tb_product)
+- `{{fields}}`: 필드 목록 (예: name,email,phone)
 
-    <form method="post">
-        <div class="mb-3">
-            <label class="form-label">제목</label>
-            <input type="text" name="title" class="form-control">
-        </div>
+**경로/폴더:**
+- `{{folder}}`: 폴더명 (예: user, product, admin)
+- `{{path}}`: 전체 경로 (예: /admin/user)
 
-        <div class="mb-3">
-            <label class="form-label">내용</label>
-            <textarea name="content" class="form-control" rows="10"></textarea>
-        </div>
+### 사용 예시
 
-        <div class="text-end">
-            <!--@if(is_insert)-->
-            <button type="submit" class="btn btn-primary">등록</button>
-            <!--/if(is_insert)-->
-
-            <!--@if(is_modify)-->
-            <button type="submit" class="btn btn-primary">수정</button>
-            <!--/if(is_modify)-->
-
-            <a href="{{entity}}_list.jsp" class="btn btn-secondary">목록</a>
-        </div>
-    </form>
-</div>
-
-{{form_script}}
-\`\`\`
-```
-
-### 예제 2: Workers API 템플릿
-
-**파일: `.claude/templates/api-endpoint.md`**
-
-```markdown
-# API 엔드포인트 템플릿 (Cloudflare Workers)
-
-## 사용 방법
-RESTful API 엔드포인트를 생성할 때 이 템플릿을 사용하세요.
-- {{Entity}}: PascalCase 엔티티명 (예: User, Product)
-- {{entity}}: camelCase 엔티티명 (예: user, product)
-- {{table}}: 테이블명 (예: users, products)
-
-## Service 파일: /src/services/{{entity}}Service.js
-
-\`\`\`javascript
+```javascript
+// {{Entity}}: PascalCase 엔티티명 (예: User, Product)
 export class {{Entity}}Service {
   constructor(env) {
     this.env = env;
-  }
-
-  async get{{Entity}}(id) {
-    // KV 캐시 확인
-    const cacheKey = \`{{entity}}:\${id}\`;
-    const cached = await this.env.KV.get(cacheKey, { type: 'json' });
-    if (cached) return cached;
-
-    // D1 조회
-    const {{entity}} = await this.env.DB
-      .prepare('SELECT * FROM {{table}} WHERE id = ?')
-      .bind(id)
-      .first();
-
-    if (!{{entity}}) {
-      const error = new Error('{{Entity}} not found');
-      error.name = 'NotFoundError';
-      throw error;
-    }
-
-    // 캐시 저장 (1시간)
-    await this.env.KV.put(cacheKey, JSON.stringify({{entity}}), {
-      expirationTtl: 3600
-    });
-
-    return {{entity}};
-  }
-
-  async list{{Entity}}s(filters = {}) {
-    let query = 'SELECT * FROM {{table}} WHERE 1=1';
-    const params = [];
-
-    if (filters.status) {
-      query += ' AND status = ?';
-      params.push(filters.status);
-    }
-
-    query += ' ORDER BY created_at DESC LIMIT ?';
-    params.push(filters.limit || 50);
-
-    const { results } = await this.env.DB
-      .prepare(query)
-      .bind(...params)
-      .all();
-
-    return results;
-  }
-
-  async create{{Entity}}(data) {
-    const result = await this.env.DB
-      .prepare('INSERT INTO {{table}} (name, status, created_at) VALUES (?, ?, ?)')
-      .bind(data.name, data.status || 'active', new Date().toISOString())
-      .run();
-
-    const id = result.meta.last_row_id;
-
-    // 캐시 무효화 (선택)
-    await this.env.KV.delete(\`{{entity}}:\${id}\`);
-
-    return { id, ...data };
-  }
-
-  async update{{Entity}}(id, data) {
-    const result = await this.env.DB
-      .prepare('UPDATE {{table}} SET name = ?, status = ?, updated_at = ? WHERE id = ?')
-      .bind(data.name, data.status, new Date().toISOString(), id)
-      .run();
-
-    if (result.meta.changes === 0) {
-      const error = new Error('{{Entity}} not found');
-      error.name = 'NotFoundError';
-      throw error;
-    }
-
-    // 캐시 무효화
-    await this.env.KV.delete(\`{{entity}}:\${id}\`);
-
-    return { id, ...data };
-  }
-
-  async delete{{Entity}}(id) {
-    const result = await this.env.DB
-      .prepare('DELETE FROM {{table}} WHERE id = ?')
-      .bind(id)
-      .run();
-
-    if (result.meta.changes === 0) {
-      const error = new Error('{{Entity}} not found');
-      error.name = 'NotFoundError';
-      throw error;
-    }
-
-    // 캐시 무효화
-    await this.env.KV.delete(\`{{entity}}:\${id}\`);
-
-    return true;
+    this.table = '{{table}}'; // 테이블명 (예: users, products)
   }
 }
-\`\`\`
-
-## Route 파일: /src/routes/{{entity}}s.js
-
-\`\`\`javascript
-import { Hono } from 'hono';
-import { {{Entity}}Service } from '../services/{{entity}}Service.js';
-
-const {{entity}}s = new Hono();
-
-// GET /{{entity}}s - 목록 조회
-{{entity}}s.get('/', async (c) => {
-  const status = c.req.query('status');
-  const limit = parseInt(c.req.query('limit') || '50');
-
-  const service = new {{Entity}}Service(c.env);
-  const results = await service.list{{Entity}}s({ status, limit });
-
-  return c.json({ data: results });
-});
-
-// GET /{{entity}}s/:id - 상세 조회
-{{entity}}s.get('/:id', async (c) => {
-  const id = c.req.param('id');
-
-  const service = new {{Entity}}Service(c.env);
-  const {{entity}} = await service.get{{Entity}}(id);
-
-  return c.json({ data: {{entity}} });
-});
-
-// POST /{{entity}}s - 생성
-{{entity}}s.post('/', async (c) => {
-  const body = await c.req.json();
-
-  // 간단한 유효성 검증
-  if (!body.name) {
-    return c.json({ error: 'Name is required' }, 400);
-  }
-
-  const service = new {{Entity}}Service(c.env);
-  const {{entity}} = await service.create{{Entity}}(body);
-
-  return c.json({ data: {{entity}} }, 201);
-});
-
-// PUT /{{entity}}s/:id - 수정
-{{entity}}s.put('/:id', async (c) => {
-  const id = c.req.param('id');
-  const body = await c.req.json();
-
-  const service = new {{Entity}}Service(c.env);
-  const {{entity}} = await service.update{{Entity}}(id, body);
-
-  return c.json({ data: {{entity}} });
-});
-
-// DELETE /{{entity}}s/:id - 삭제
-{{entity}}s.delete('/:id', async (c) => {
-  const id = c.req.param('id');
-
-  const service = new {{Entity}}Service(c.env);
-  await service.delete{{Entity}}(id);
-
-  return c.json({ message: '{{Entity}} deleted successfully' });
-});
-
-export default {{entity}}s;
-\`\`\`
-
-## 등록: /src/index.js에 추가
-
-\`\`\`javascript
-import {{entity}}sRoutes from './routes/{{entity}}s.js';
-
-app.route('/{{entity}}s', {{entity}}sRoutes);
-\`\`\`
 ```
 
-### 예제 3: Pages ViewLogic 템플릿
+## 템플릿 유형별 구성
 
-**파일: `.claude/templates/pages-viewlogic.md`**
+### CRUD 템플릿
 
-```markdown
-# ViewLogic 페이지 템플릿 (Cloudflare Pages)
+**포함할 파일:**
+- 목록 페이지 (list)
+- 등록 페이지 (insert/create)
+- 수정 페이지 (update)
+- 상세 페이지 (view/detail)
+- DAO/Service 클래스
 
-## 사용 방법
-ViewLogic 패턴을 사용한 페이지 생성 템플릿입니다.
+**필수 기능:**
+- 페이징
+- 검색
+- 정렬
+- 유효성 검증
+- 에러 처리
 
-## Logic 파일: /src/logic/{{folder}}/{{page}}.js
+### API 템플릿
 
-\`\`\`javascript
-export default {
-    layout: 'default',
+**포함할 파일:**
+- Service 클래스
+- Route 핸들러
+- 에러 핸들러
+- 응답 포맷터
 
-    data() {
-        return {
-            items: [],
-            loading: false,
-            selectedItem: null
-        }
-    },
+**필수 기능:**
+- RESTful 엔드포인트 (GET, POST, PUT, DELETE)
+- 인증/권한 체크
+- 입력 검증
+- 캐싱 (선택)
 
-    async mounted() {
-        await this.loadData();
-    },
+### 페이지 템플릿
 
-    methods: {
-        async loadData() {
-            this.loading = true;
-            try {
-                const response = await this.$api.get('/api/{{resource}}');
-                this.items = response.data;
-            } catch (error) {
-                console.error('Failed to load data:', error);
-                alert('데이터 로딩 실패');
-            } finally {
-                this.loading = false;
-            }
-        },
+**포함할 파일:**
+- Logic/Controller
+- View/Template
+- CSS (선택)
 
-        async handleSubmit() {
-            const formData = {
-                // 폼 데이터 수집
-            };
+**필수 기능:**
+- 레이아웃 설정
+- 데이터 바인딩
+- 이벤트 핸들러
 
-            try {
-                await this.$api.post('/api/{{resource}}', formData);
-                alert('저장되었습니다.');
-                await this.loadData();
-            } catch (error) {
-                console.error('Failed to save:', error);
-                alert('저장 실패');
-            }
-        },
+**맑은프레임워크 예시:**
+```
+.claude/templates/
+├── malgn-crud-list.md      # 목록 페이지
+├── malgn-crud-insert.md    # 등록 페이지
+├── malgn-crud-update.md    # 수정 페이지
+└── malgn-dao.md            # DAO 클래스
+```
 
-        viewDetail(id) {
-            this.navigateTo('/{{folder}}/detail', { id });
-        }
-    },
+**Cloudflare Workers 예시:**
+```
+.claude/templates/
+├── workers-api-service.md  # Service 클래스
+├── workers-api-route.md    # Route 핸들러
+└── workers-middleware.md   # 미들웨어
+```
 
-    computed: {
-        filteredItems() {
-            // 필터링 로직
-            return this.items;
-        }
-    }
-}
-\`\`\`
-
-## View 파일: /src/views/{{folder}}/{{page}}.html
-
-\`\`\`html
-<div class="container py-4">
-    <h1 class="mb-4">{{Title}}</h1>
-
-    <!-- 로딩 상태 -->
-    <div v-if="loading" class="text-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">로딩중...</span>
-        </div>
-    </div>
-
-    <!-- 데이터 목록 -->
-    <div v-else>
-        <div class="row">
-            <div v-for="item in filteredItems" :key="item.id" class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ item.title }}</h5>
-                        <p class="card-text">{{ item.description }}</p>
-                        <button @click="viewDetail(item.id)" class="btn btn-primary">
-                            상세보기
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-\`\`\`
+**Cloudflare Pages 예시:**
+```
+.claude/templates/
+├── pages-viewlogic.md      # ViewLogic 페이지
+├── pages-component.md      # 재사용 컴포넌트
+└── pages-api-call.md       # API 호출 패턴
 ```
 
 ## Claude Code 활용 방법
 
-### 템플릿 사용 프롬프트
+### 템플릿 참조 프롬프트
 
+**기본 패턴:**
 ```
-프롬프트: ".claude/templates/crud-list.md 템플릿을 사용해서
-제품(Product) 목록 페이지를 만들어줘. 테이블은 tb_product이고
-name, price, category 필드로 검색 가능하게 해줘."
+프롬프트: ".claude/templates/{템플릿명}.md를 참고해서 {기능}을 만들어줘."
 ```
 
-**Claude Code의 동작:**
-1. `.claude/templates/crud-list.md` 읽기
-2. 플레이스홀더 치환:
-   - `{{entity}}` → `Product`
-   - `{{table}}` → `tb_product`
-   - `{{fields}}` → `name,price,category`
-   - `{{folder}}` → `product`
-3. 템플릿 기반으로 3개 파일 생성:
-   - `/product/product_list.jsp`
-   - `/html/product/product_list.html`
-   - `/src/dao/ProductDao.java`
+**구체적 예시:**
+```
+프롬프트: ".claude/templates/workers-api-service.md를 참고해서
+Product API를 만들어줘. 테이블은 products이고 KV 캐시를 사용해줘."
+```
 
-### 템플릿 없이 요청한 경우와 비교
+**Claude Code 동작:**
+1. 템플릿 파일 읽기
+2. 플레이스홀더 치환
+3. 프로젝트 구조에 맞게 파일 생성
+
+### 템플릿 활용 효과
 
 **템플릿 없이:**
-- Claude Code가 자체 판단으로 코드 생성
-- 프로젝트 패턴과 다를 수 있음
-- 유효성 검증 누락 가능
-- 권한 체크 누락 가능
+- 매번 구조 설명 필요
+- 일관성 유지 어려움
+- 필수 요소 누락 가능
 
 **템플릿 사용:**
-- 검증된 패턴을 그대로 사용
-- 일관된 구조 유지
-- 필수 요소 자동 포함
-- 버그 발생 가능성 감소
+- 즉시 코드 생성 가능
+- 검증된 패턴 적용
+- 팀 전체 일관성 유지
 
 ## 템플릿 관리 팁
 
-### 1. 실제 운영 코드를 템플릿으로
+### 1. 실제 운영 코드 기반
+- 검증된 코드를 템플릿화
+- 프로덕션 환경에서 작동하는 코드 사용
 
-가장 좋은 템플릿은 실제로 작동하는 코드입니다.
+### 2. 명확한 설명과 주석
+- 각 플레이스홀더 설명 추가
+- 핵심 로직에 주석 포함
 
-### 2. 주석으로 설명 추가
-
-```javascript
-// {{Entity}}: 엔티티명을 PascalCase로 입력 (예: User, Product)
-export class {{Entity}}Service {
-  // ...
-}
-```
-
-### 3. 플레이스홀더 일관성
-
-- `{{entity}}`: camelCase
-- `{{Entity}}`: PascalCase
-- `{{ENTITY}}`: UPPER_CASE
-- `{{table}}`: snake_case
+### 3. 일관된 네이밍
+- 팀 내 플레이스홀더 규칙 통일
+- 문서화하여 공유
 
 ### 4. 필수 요소 포함
-
 - 유효성 검증
 - 에러 처리
 - 권한 체크
-- 로깅
+- 보안 패턴
 
-### 5. 주기적 업데이트
+### 5. 정기적 업데이트
+- 베스트 프랙티스 변경 시 반영
+- 팀 피드백 반영
 
-베스트 프랙티스가 변경되면 템플릿도 업데이트하세요.
+### 6. Git 버전 관리
+- 템플릿을 Git에 커밋
+- 팀 전체가 최신 템플릿 사용
 
 ## 다음 단계
 
