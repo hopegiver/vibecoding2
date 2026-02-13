@@ -471,7 +471,5 @@ database_id = "prod-xxx"  # 프로덕션
 
 ## 관련 문서
 
-- [Functions 개발](pages-functions.md)
-- [API 엔드포인트 개발](pages-api.md)
 - [빌드 및 배포](pages-deployment.md)
 - [Workers D1 데이터베이스 활용](workers-d1.md)

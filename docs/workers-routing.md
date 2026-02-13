@@ -1,181 +1,264 @@
-# Cloudflare Workers - 라우팅 및 요청 처리
+# Cloudflare Workers - 라우팅
 
-Workers에서 HTTP 요청을 라우팅하고 처리하는 방법을 학습합니다.
+Hono 프레임워크 기반 라우팅, 미들웨어, 서비스 패턴을 안내합니다.
 
-## 기본 라우팅
+## 아키텍처
 
-### URL 파싱
+```
+Request → Middleware → Route → Service → Response
+```
 
-```typescript
-export default {
-    async fetch(request: Request): Promise<Response> {
-        const url = new URL(request.url);
-        const path = url.pathname;
-        const method = request.method;
+- **Route**: HTTP 요청 수신, 서비스 호출 (비즈니스 로직 없음)
+- **Service**: 비즈니스 로직 (클래스 기반, env 주입)
+- **Middleware**: 인증, 에러 처리, 로깅
+- **Utils**: 상태 없는 유틸리티 함수
 
-        // 쿼리 파라미터
-        const name = url.searchParams.get('name');
+## 앱 초기화 (src/index.js)
 
-        if (path === '/' && method === 'GET') {
-            return new Response('Home');
-        }
+```javascript
+import { Hono } from 'hono';
+import { logger } from 'hono/logger';
+import { cors } from 'hono/cors';
+import { authMiddleware } from './middleware/auth.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
 
-        if (path === '/api/hello' && method === 'GET') {
-            return new Response(`Hello, ${name || 'World'}!`);
-        }
+const app = new Hono();
 
-        return new Response('Not Found', { status: 404 });
+// 글로벌 미들웨어
+app.use('*', logger());
+app.use('*', cors());
+
+// 인증 미들웨어 (PUBLIC_PATHS 제외)
+const PUBLIC_PATHS = ['/health', '/docs', '/openapi.json', '/auth'];
+app.use('*', async (c, next) => {
+    const path = new URL(c.req.url).pathname;
+    if (PUBLIC_PATHS.some(p => path.startsWith(p))) {
+        return next();
     }
-};
+    return authMiddleware(c, next);
+});
+
+// 라우트 등록
+app.route('/auth', authRoutes);
+app.route('/users', userRoutes);
+
+// 에러 핸들러
+app.onError(errorHandler);
+
+// 404
+app.notFound((c) => c.json({ error: 'Not Found' }, 404));
+
+export default app;
 ```
 
-## 고급 라우터 구현
+## 라우트 작성
 
-### itty-router 사용
+### 기본 패턴
 
-```bash
-npm install itty-router
+`src/routes/users.js`:
+
+```javascript
+import { Hono } from 'hono';
+import { UserService } from '../services/userService.js';
+
+const users = new Hono();
+
+// GET /users
+users.get('/', async (c) => {
+    const userService = new UserService(c.env);
+    const result = await userService.getUsers();
+    return c.json(result);
+});
+
+// GET /users/profile (JWT에서 사용자 정보 추출)
+users.get('/profile', async (c) => {
+    const userId = c.get('userId');
+    const userService = new UserService(c.env);
+    const result = await userService.getUserById(userId);
+    return c.json(result);
+});
+
+export default users;
 ```
 
-```typescript
-import { Router } from 'itty-router';
+### 라우트 규칙
 
-const router = Router();
+- 핸들러는 얇게 유지 (비즈니스 로직은 Service에)
+- `c.env`로 환경 변수 및 바인딩 접근
+- `c.get('userId')`, `c.get('userRole')`로 인증 정보 접근
+- `c.json()`으로 응답 반환
 
-router.get('/', () => {
-    return new Response('API is running');
-});
+## 서비스 작성
 
-router.get('/api/users', async (request, env) => {
-    const users = await env.DB.prepare('SELECT * FROM users').all();
-    return Response.json(users.results);
-});
+### 기본 패턴
 
-router.get('/api/users/:id', async (request, env) => {
-    const { id } = request.params;
-    const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
-    return Response.json(user);
-});
+`src/services/userService.js`:
 
-router.post('/api/users', async (request, env) => {
-    const data = await request.json();
-    await env.DB.prepare('INSERT INTO users (name, email) VALUES (?, ?)').bind(data.name, data.email).run();
-    return Response.json({ success: true }, { status: 201 });
-});
+```javascript
+import { formatResponse } from '../utils/utils.js';
 
-export default {
-    fetch: router.handle
-};
-```
-
-## 요청 처리
-
-### JSON 요청
-
-```typescript
-router.post('/api/posts', async (request) => {
-    try {
-        const data = await request.json();
-
-        // 유효성 검사
-        if (!data.title || !data.content) {
-            return Response.json({
-                error: '제목과 내용을 입력하세요.'
-            }, { status: 400 });
-        }
-
-        // 처리...
-        return Response.json({ success: true });
-    } catch (error) {
-        return Response.json({
-            error: '잘못된 요청입니다.'
-        }, { status: 400 });
-    }
-});
-```
-
-### FormData 처리
-
-```typescript
-router.post('/api/upload', async (request) => {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const title = formData.get('title') as string;
-
-    if (!file) {
-        return Response.json({ error: '파일을 선택하세요.' }, { status: 400 });
+export class UserService {
+    constructor(env) {
+        this.env = env;
     }
 
-    // 파일 처리...
-    return Response.json({ success: true });
-});
+    async getUsers() {
+        // D1 사용 시:
+        // const { results } = await this.env.DB.prepare('SELECT * FROM users').all();
+        // return formatResponse(results);
+
+        // Mock 데이터
+        return formatResponse([
+            { id: 1, username: 'admin', role: 'admin' },
+            { id: 2, username: 'user', role: 'user' }
+        ]);
+    }
+
+    async getUserById(id) {
+        // D1 사용 시:
+        // const user = await this.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(id).first();
+        // return formatResponse(user);
+
+        return formatResponse({ id, username: 'user' });
+    }
+}
 ```
+
+### 서비스 규칙
+
+- 반드시 클래스로 작성
+- 생성자에서 `env` 주입받기
+- 에러는 `throw`로 전파 (errorHandler가 처리)
 
 ## 미들웨어
 
-### CORS 미들웨어
+### JWT 인증 (src/middleware/auth.js)
 
-```typescript
-function corsHeaders() {
-    return {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-    };
-}
+```javascript
+import * as jose from 'jose';
 
-router.options('*', () => {
-    return new Response(null, {
-        headers: corsHeaders()
-    });
-});
-
-router.all('*', async (request, env) => {
-    const response = await router.handle(request, env);
-    Object.entries(corsHeaders()).forEach(([key, value]) => {
-        response.headers.set(key, value);
-    });
-    return response;
-});
-```
-
-### 인증 미들웨어
-
-```typescript
-async function authMiddleware(request: Request, env: Env) {
-    const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+export async function authMiddleware(c, next) {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
-        return Response.json({ error: '인증이 필요합니다.' }, { status: 401 });
+        return c.json({ error: '인증이 필요합니다.' }, 401);
     }
 
-    // JWT 검증
-    const isValid = await verifyToken(token, env.JWT_SECRET);
-    if (!isValid) {
-        return Response.json({ error: '유효하지 않은 토큰입니다.' }, { status: 403 });
-    }
+    try {
+        const secret = new TextEncoder().encode(c.env.JWT_SECRET);
+        const { payload } = await jose.jwtVerify(token, secret);
 
-    return null; // 통과
+        // 컨텍스트에 사용자 정보 저장
+        c.set('userId', payload.sub || payload.userId);
+        c.set('userEmail', payload.email);
+        c.set('userRole', payload.role);
+
+        await next();
+    } catch (error) {
+        return c.json({ error: '유효하지 않은 토큰입니다.' }, 401);
+    }
 }
-
-router.get('/api/protected', async (request, env) => {
-    const authError = await authMiddleware(request, env);
-    if (authError) return authError;
-
-    // 보호된 리소스
-    return Response.json({ data: 'Protected data' });
-});
 ```
 
-## 체크리스트
+### 에러 처리 (src/middleware/errorHandler.js)
 
-- [ ] 라우터가 모든 경로를 처리하는가?
-- [ ] 404 처리가 되어 있는가?
-- [ ] CORS가 설정되어 있는가?
-- [ ] 파라미터 유효성 검사를 했는가?
-- [ ] 오류 처리가 적절한가?
+```javascript
+export function errorHandler(err, c) {
+    console.error('Error:', err.message);
+
+    const status = {
+        'ValidationError': 400,
+        'UnauthorizedError': 401
+    }[err.name] || 500;
+
+    return c.json({ error: err.message }, status);
+}
+```
+
+### 에러 발생 방법
+
+서비스에서 named error를 throw:
+
+```javascript
+const error = new Error('잘못된 입력입니다.');
+error.name = 'ValidationError';  // → 400
+throw error;
+```
+
+## 새 기능 추가 예제
+
+### 1. 라우트 파일 생성
+
+`src/routes/posts.js`:
+
+```javascript
+import { Hono } from 'hono';
+import { PostService } from '../services/postService.js';
+
+const posts = new Hono();
+
+posts.get('/', async (c) => {
+    const postService = new PostService(c.env);
+    return c.json(await postService.getPosts());
+});
+
+posts.post('/', async (c) => {
+    const data = await c.req.json();
+    const userId = c.get('userId');
+    const postService = new PostService(c.env);
+    return c.json(await postService.createPost(data, userId), 201);
+});
+
+export default posts;
+```
+
+### 2. 서비스 파일 생성
+
+`src/services/postService.js`:
+
+```javascript
+import { formatResponse } from '../utils/utils.js';
+
+export class PostService {
+    constructor(env) {
+        this.env = env;
+    }
+
+    async getPosts() {
+        const { results } = await this.env.DB
+            .prepare('SELECT * FROM posts ORDER BY created_at DESC')
+            .all();
+        return formatResponse(results);
+    }
+
+    async createPost(data, userId) {
+        if (!data.title || !data.content) {
+            const error = new Error('제목과 내용은 필수입니다.');
+            error.name = 'ValidationError';
+            throw error;
+        }
+
+        await this.env.DB
+            .prepare('INSERT INTO posts (title, content, user_id) VALUES (?, ?, ?)')
+            .bind(data.title, data.content, userId)
+            .run();
+
+        return formatResponse({ success: true });
+    }
+}
+```
+
+### 3. index.js에 등록
+
+```javascript
+import postRoutes from './routes/posts.js';
+
+app.route('/posts', postRoutes);
+```
 
 ## 관련 문서
 
-- [프로젝트 시작하기](workers-getting-started.md)
-- [API 개발](workers-api.md)
+- [시작하기](workers-getting-started.md)
+- [배포](workers-deployment.md)

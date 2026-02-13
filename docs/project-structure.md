@@ -140,10 +140,8 @@ pages-project/
 ├── index.html
 ├── favicon.ico
 ├── src/
-│   ├── main.js              # 엔트리 포인트
-│   ├── router.js            # ViewLogic Router
 │   ├── views/               # HTML 템플릿 (CSS 금지!)
-│   │   ├── layout/
+│   │   ├── layout/          # 레이아웃 템플릿
 │   │   │   └── default.html
 │   │   ├── goals/
 │   │   │   ├── my-goals.html
@@ -151,17 +149,16 @@ pages-project/
 │   │   └── team/
 │   │       └── tasks.html
 │   ├── logic/               # JavaScript 로직
-│   │   ├── layout/
+│   │   ├── layout/          # 레이아웃 스크립트
 │   │   │   └── default.js
 │   │   ├── goals/
 │   │   │   ├── my-goals.js
 │   │   │   └── detail.js
 │   │   └── team/
 │   │       └── tasks.js
-│   └── api/                 # API 유틸리티
-│       └── client.js
+│   └── components/          # 재사용 컴포넌트 (선택)
 ├── css/
-│   └── base.css             # 모든 CSS 여기에!
+│   └── base.css             # 커스텀 스타일 (Bootstrap 보완)
 ├── images/
 └── functions/               # Pages Functions (API)
     └── api/

@@ -491,5 +491,3 @@ Target: myapp.pages.dev
 
 - [프로젝트 시작하기](pages-getting-started.md)
 - [환경 변수 및 설정](pages-environment.md)
-- [Functions 개발](pages-functions.md)
-- [베스트 프랙티스](best-practices.md)

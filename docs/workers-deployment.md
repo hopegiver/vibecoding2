@@ -1,6 +1,6 @@
-# Cloudflare Workers - 배포 및 모니터링
+# Cloudflare Workers - 배포
 
-Workers 배포, 버전 관리, 모니터링 방법을 학습합니다.
+Workers 배포, 환경 설정, 모니터링 방법을 안내합니다.
 
 ## 배포
 
@@ -8,6 +8,9 @@ Workers 배포, 버전 관리, 모니터링 방법을 학습합니다.
 
 ```bash
 # 프로덕션 배포
+npm run deploy
+
+# 또는
 npx wrangler deploy
 
 # 특정 환경
@@ -17,67 +20,107 @@ npx wrangler deploy --env production
 ### 버전 관리
 
 ```bash
-# 현재 배포된 버전 확인
+# 배포 이력 확인
 npx wrangler deployments list
 
-# 특정 버전으로 롤백
+# 롤백
 npx wrangler rollback <deployment-id>
 ```
 
-## 환경별 설정
+## 환경 설정
 
-### wrangler.toml
+### 환경 변수
+
+**로컬 개발:** `.dev.vars` 파일 (Wrangler 자동 로드)
+
+```
+JWT_SECRET=your-dev-secret-key
+OPENAI_API_KEY=sk-xxx
+```
+
+**프로덕션:** Wrangler secrets
+
+```bash
+# 시크릿 등록
+wrangler secret put JWT_SECRET --env production
+
+# JWT 시크릿 생성 예시
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+### wrangler.toml 환경 분리
 
 ```toml
-name = "my-worker"
-main = "src/index.ts"
+name = "myworker"
+main = "src/index.js"
 compatibility_date = "2024-01-01"
 
-# 개발 환경 (기본)
-[env.development]
+[vars]
+ENVIRONMENT = "development"
+
+[env.dev]
 vars = { ENVIRONMENT = "development" }
 
-# 프로덕션 환경
 [env.production]
 vars = { ENVIRONMENT = "production" }
-route = { pattern = "api.example.com/*", zone_name = "example.com" }
+```
+
+### 바인딩 설정 (필요 시)
+
+```toml
+# D1 데이터베이스
+[[d1_databases]]
+binding = "DB"
+database_name = "myworker-db"
+database_id = "xxx"
+
+# KV 네임스페이스
+[[kv_namespaces]]
+binding = "CACHE"
+id = "xxx"
+
+# R2 버킷
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "myworker-storage"
 ```
 
 ## 커스텀 도메인
 
-### 라우트 설정
+### wrangler.toml
 
 ```toml
-[[routes]]
-pattern = "api.example.com/*"
-zone_name = "example.com"
+[env.production]
+route = { pattern = "api.example.com/*", zone_name = "example.com" }
 ```
 
-또는 대시보드에서:
+### 대시보드
+
 1. Workers → 프로젝트 선택
 2. Triggers → Custom Domains
 3. 도메인 추가
 
 ## 모니터링
 
-### Analytics
+### 실시간 로그
 
-**Cloudflare 대시보드:**
+```bash
+# 전체 로그
+npx wrangler tail
+
+# 에러만
+npx wrangler tail --status error
+
+# 특정 메서드
+npx wrangler tail --method POST
+```
+
+### Cloudflare 대시보드
+
 - 요청 수
 - 에러율
 - CPU 시간
 - 대역폭
-
-### wrangler tail
-
-```bash
-# 실시간 로그
-npx wrangler tail
-
-# 필터링
-npx wrangler tail --status error
-npx wrangler tail --method POST
-```
 
 ## CI/CD
 
@@ -94,18 +137,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
       - run: npm install
-      - run: npm test
-      - run: npx wrangler deploy
+      - run: npx wrangler deploy --env production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 ```
 
 ## 관련 문서
 
-- [프로젝트 시작하기](workers-getting-started.md)
-- [테스트 및 디버깅](workers-testing.md)
+- [시작하기](workers-getting-started.md)
+- [라우팅](workers-routing.md)
