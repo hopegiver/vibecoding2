@@ -150,9 +150,7 @@ JSP, HTML, Java(DAO) 파일을 작성하면 **Hook이 자동으로 규칙 위반
 ## 다음 단계
 
 - [.claude 설정 예제](malgn-claude-setup.md)
-- [페이지 및 라우팅 개발](malgn-pages-routing.md)
-- [API 개발 및 연동](malgn-api.md)
-- [데이터베이스 작업](malgn-database.md)
+- [MCP 서버 설정](mcp-setup.md)
 
 ---
 

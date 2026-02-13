@@ -20,13 +20,7 @@
 
 ### 맑은프레임워크
 - [시작하기](docs/malgn-getting-started.md)
-- [페이지 라우팅](docs/malgn-pages-routing.md)
-- [컴포넌트](docs/malgn-components.md)
-- [API 개발](docs/malgn-api.md)
-- [데이터베이스](docs/malgn-database.md)
-- [상태 관리](docs/malgn-state.md)
-- [테스트](docs/malgn-testing.md)
-- [배포](docs/malgn-deployment.md)
+- [.claude 설정](docs/malgn-claude-setup.md)
 
 ### Cloudflare Pages
 - [시작하기](docs/pages-getting-started.md)
