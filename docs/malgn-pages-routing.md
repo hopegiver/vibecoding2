@@ -77,13 +77,13 @@ p.display();
     <h1>연락처</h1>
     <dl class="row">
         <dt class="col-sm-3">회사명</dt>
-        <dd class="col-sm-9">{companyName}</dd>
+        <dd class="col-sm-9">{{companyName}}</dd>
 
         <dt class="col-sm-3">전화</dt>
-        <dd class="col-sm-9">{phone}</dd>
+        <dd class="col-sm-9">{{phone}}</dd>
 
         <dt class="col-sm-3">이메일</dt>
-        <dd class="col-sm-9">{email}</dd>
+        <dd class="col-sm-9">{{email}}</dd>
     </dl>
 </div>
 ```
@@ -97,7 +97,7 @@ p.display();
 
 int boardId = m.ri("id");
 if(boardId == 0) {
-    m.jsAlert("잘못된 접근입니다.");
+    m.jsError("잘못된 접근입니다.");
     m.jsReplace("/board/board_list.jsp");
     return;
 }
@@ -105,7 +105,7 @@ if(boardId == 0) {
 BoardDao board = new BoardDao();
 DataSet info = board.findById(boardId);
 if(!info.next()) {
-    m.jsAlert("게시글을 찾을 수 없습니다.");
+    m.jsError("게시글을 찾을 수 없습니다.");
     m.jsReplace("/board/board_list.jsp");
     return;
 }
@@ -127,7 +127,7 @@ p.display();
 
 **핵심:**
 - `m.ri("id")`: GET 파라미터를 int로 받기 (XSS 자동 필터)
-- `m.jsAlert()`: 자바스크립트 alert 출력
+- `m.jsError()`: 자바스크립트 에러 메시지 출력
 - `m.jsReplace()`: 페이지 이동
 - `return` 필수: 이후 코드 실행 방지
 
@@ -135,20 +135,20 @@ p.display();
 
 ```html
 <div class="container mt-5">
-    <h1>{info.title}</h1>
+    <h1>{{info.title}}</h1>
     <p class="text-muted">
-        작성자: {info.user_name} | 작성일: {info.reg_date_format} | 조회수: {info.view_count}
+        작성자: {{info.user_name}} | 작성일: {{info.reg_date_format}} | 조회수: {{info.view_count}}
     </p>
     <hr>
     <div class="content">
-        {info.content}
+        {{info.content}}
     </div>
     <div class="mt-3">
         <a href="board_list.jsp" class="btn btn-secondary">목록</a>
-        {#if info.user_id == userId}
-        <a href="board_modify.jsp?id={info.id}" class="btn btn-primary">수정</a>
-        <a href="board_delete.jsp?id={info.id}" class="btn btn-danger">삭제</a>
-        {#/if}
+        <!--@if(info.user_id == userId)-->
+        <a href="board_modify.jsp?id={{info.id}}" class="btn btn-primary">수정</a>
+        <a href="board_delete.jsp?id={{info.id}}" class="btn btn-danger">삭제</a>
+        <!--/if(info.user_id == userId)-->
     </div>
 </div>
 ```
@@ -192,14 +192,14 @@ p.setLayout("simple");
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{title}</title>
+    <title>{{title}}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
     <div class="container">
         <div class="row justify-content-center mt-5">
             <div class="col-md-6">
-                {__CONTENT__}
+                <!--@include(BODY)-->
             </div>
         </div>
     </div>
@@ -442,10 +442,10 @@ p.setLayout("main");  // html/layout/layout_main.html
 p.setVar("userName", "홍길동");
 
 // HTML - ❌ 틀림
-<p>{username}</p>
+<p>{{username}}</p>
 
 // HTML - ✅ 올바름
-<p>{userName}</p>
+<p>{{userName}}</p>
 ```
 
 ## 관련 문서

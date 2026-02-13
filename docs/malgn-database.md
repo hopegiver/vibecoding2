@@ -18,7 +18,7 @@
 
 ```jsp
 BoardDao board = new BoardDao();
-DataSet list = board.findAll("ORDER BY id DESC");
+DataSet list = board.find("1=1 ORDER BY id DESC");
 
 // 행 순회
 while(list.next()) {
@@ -66,6 +66,8 @@ boolean isEmpty = list.isEmpty();
 
 ### 기본 DAO 구조
 
+DAO 클래스는 최소한으로 유지합니다. 생성자에서 테이블과 PK만 설정하면 됩니다.
+
 **src/dao/BoardDao.java:**
 
 ```java
@@ -85,91 +87,23 @@ public class BoardDao extends DataObject {
 - `table`: 테이블 이름
 - `PK`: Primary Key 컬럼명
 
-### CRUD 메서드
-
-```java
-public class BoardDao extends DataObject {
-    public BoardDao() {
-        this.table = "tb_board";
-        this.PK = "id";
-    }
-
-    // Create
-    public DataSet createNew(int userId, String title, String content) {
-        DataSet item = this.create();
-        item.put("user_id", userId);
-        item.put("title", title);
-        item.put("content", content);
-        item.put("reg_date", Malgn.time("yyyyMMddHHmmss"));
-        this.save(item);
-        return item;
-    }
-
-    // Read - 단일
-    public DataSet findById(int id) {
-        return this.find("id = ?", new Object[]{id});
-    }
-
-    // Read - 목록
-    public DataSet findAll(String orderBy) {
-        return this.find("1=1 " + orderBy);
-    }
-
-    // Read - 조건
-    public DataSet findByUserId(int userId, String orderBy) {
-        return this.find("user_id = ? " + orderBy, new Object[]{userId});
-    }
-
-    // Update (save 메서드 사용)
-    // save()는 자동으로 UPDATE/INSERT 판단
-
-    // Delete
-    public boolean deleteById(int id) {
-        return this.delete(id);
-    }
-
-    // Custom 쿼리
-    public boolean increaseViewCount(int id) {
-        String sql = "UPDATE tb_board SET view_count = view_count + 1 WHERE id = ?";
-        return this.executeUpdate(sql, new Object[]{id});
-    }
-}
-```
+이것만으로 `item()`, `insert()`, `update()`, `find()`, `delete()` 등 DataObject의 모든 CRUD 메서드를 사용할 수 있습니다.
 
 ### JOIN 쿼리
 
-```java
-public class BoardDao extends DataObject {
-    public BoardDao() {
-        this.table = "tb_board";
-        this.PK = "id";
-    }
-
-    public DataSet findWithUser(int id) {
-        String sql = "SELECT b.*, u.name as user_name, u.email as user_email " +
-                     "FROM tb_board b " +
-                     "LEFT JOIN tb_user u ON b.user_id = u.id " +
-                     "WHERE b.id = ?";
-        return this.executeQuery(sql, new Object[]{id});
-    }
-
-    public DataSet findAllWithUser(String where, String orderBy) {
-        String sql = "SELECT b.*, u.name as user_name " +
-                     "FROM tb_board b " +
-                     "LEFT JOIN tb_user u ON b.user_id = u.id " +
-                     "WHERE " + where + " " + orderBy;
-        return this.executeQuery(sql);
-    }
-}
-```
-
-**JSP에서 사용:**
+복잡한 쿼리가 필요한 경우 `executeQuery()`를 사용합니다.
 
 ```jsp
 BoardDao board = new BoardDao();
-DataSet info = board.findWithUser(boardId);
+
+String sql = "SELECT b.*, u.name as user_name, u.email as user_email " +
+             "FROM tb_board b " +
+             "LEFT JOIN tb_user u ON b.user_id = u.id " +
+             "WHERE b.id = ?";
+DataSet info = board.executeQuery(sql, new Object[]{boardId});
+
 if(!info.next()) {
-    m.jsAlert("게시글을 찾을 수 없습니다.");
+    m.jsError("게시글을 찾을 수 없습니다.");
     return;
 }
 
@@ -200,20 +134,20 @@ p.setVar("pager", lm.getPaging());
 **HTML:**
 
 ```html
-<p>전체 {total}건</p>
+<p>전체 {{total}}건</p>
 
 <table class="table">
-{#loop list}
+<!--@loop(list)-->
     <tr>
-        <td>{list.id}</td>
-        <td>{list.title}</td>
+        <td>{{list.id}}</td>
+        <td>{{list.title}}</td>
     </tr>
-{#/loop}
+<!--/loop(list)-->
 </table>
 
 <nav>
     <ul class="pagination">
-        {pager}
+        {{pager}}
     </ul>
 </nav>
 ```
@@ -297,19 +231,14 @@ lm.setOrderBy(orderBy + " " + orderDir);
 ```jsp
 BoardDao board = new BoardDao();
 
-// 새 DataSet 생성
-DataSet newItem = board.create();
-newItem.put("user_id", userId);
-newItem.put("title", f.get("title"));
-newItem.put("content", f.get("content"));
-newItem.put("view_count", 0);
-newItem.put("reg_date", m.time("yyyyMMddHHmmss"));
+// item()으로 필드 설정 후 insert()
+board.item("user_id", userId);
+board.item("title", f.get("title"));
+board.item("content", f.get("content"));
+board.item("view_count", 0);
+board.item("reg_date", m.time("yyyyMMddHHmmss"));
 
-// 저장 (INSERT)
-board.save(newItem);
-
-// 생성된 ID 가져오기
-int newId = newItem.i("id");
+board.insert();
 ```
 
 ### Read (조회)
@@ -318,9 +247,9 @@ int newId = newItem.i("id");
 BoardDao board = new BoardDao();
 
 // 단일 조회
-DataSet info = board.findById(boardId);
+DataSet info = board.find("id = " + boardId);
 if(!info.next()) {
-    m.jsAlert("게시글을 찾을 수 없습니다.");
+    m.jsError("게시글을 찾을 수 없습니다.");
     return;
 }
 
@@ -328,7 +257,7 @@ String title = info.s("title");
 String content = info.s("content");
 
 // 목록 조회
-DataSet list = board.findAll("ORDER BY id DESC LIMIT 10");
+DataSet list = board.find("1=1 ORDER BY id DESC LIMIT 10");
 while(list.next()) {
     // 처리
 }
@@ -338,24 +267,19 @@ while(list.next()) {
 
 ```jsp
 BoardDao board = new BoardDao();
-DataSet info = board.findById(boardId);
+DataSet info = board.find("id = " + boardId);
 if(!info.next()) {
-    m.jsAlert("게시글을 찾을 수 없습니다.");
+    m.jsError("게시글을 찾을 수 없습니다.");
     return;
 }
 
-// 수정
-info.put("title", f.get("title"));
-info.put("content", f.get("content"));
-info.put("mod_date", m.time("yyyyMMddHHmmss"));
+// item()으로 수정할 필드 설정 후 update()
+board.item("title", f.get("title"));
+board.item("content", f.get("content"));
+board.item("mod_date", m.time("yyyyMMddHHmmss"));
 
-// 저장 (UPDATE)
-board.save(info);
+board.update("id = " + boardId);
 ```
-
-**주의:** `save()` 메서드는 자동으로 INSERT/UPDATE를 판단합니다.
-- PK가 있으면: UPDATE
-- PK가 없으면: INSERT
 
 ### Delete (삭제)
 
@@ -369,7 +293,7 @@ if(success) {
     m.jsAlert("삭제되었습니다.");
     m.jsReplace("/board/board_list.jsp");
 } else {
-    m.jsAlert("삭제 실패");
+    m.jsError("삭제 실패");
 }
 ```
 
@@ -384,18 +308,15 @@ boolean success = db.transaction(new Runnable() {
     public void run() {
         // 게시글 저장
         BoardDao board = new BoardDao();
-        DataSet newBoard = board.create();
-        newBoard.put("title", "제목");
-        board.save(newBoard);
-
-        int boardId = newBoard.i("id");
+        board.item("title", "제목");
+        board.item("reg_date", m.time("yyyyMMddHHmmss"));
+        board.insert();
 
         // 첨부파일 저장
         AttachDao attach = new AttachDao();
-        DataSet newAttach = attach.create();
-        newAttach.put("board_id", boardId);
-        newAttach.put("filename", "file.jpg");
-        attach.save(newAttach);
+        attach.item("board_id", board.getInsertId());
+        attach.item("filename", "file.jpg");
+        attach.insert();
     }
 });
 
@@ -422,9 +343,9 @@ if(success) {
 String now = m.time("yyyyMMddHHmmss");
 // 예: "20260129153045"
 
-// DataSet에 저장
-info.put("reg_date", now);
-info.put("mod_date", now);
+// item()으로 설정
+board.item("reg_date", now);
+board.item("mod_date", now);
 ```
 
 **형식:** YYYYMMDDHHmmss (14자리)
@@ -432,7 +353,7 @@ info.put("mod_date", now);
 ### 날짜 포맷팅
 
 ```jsp
-DataSet list = board.findAll("ORDER BY id DESC");
+DataSet list = board.find("1=1 ORDER BY id DESC");
 
 while(list.next()) {
     String regDate = list.s("reg_date");
@@ -448,9 +369,9 @@ p.setLoop("list", list);
 **HTML:**
 
 ```html
-{#loop list}
-    <p>작성일: {list.reg_date_format}</p>
-{#/loop}
+<!--@loop(list)-->
+    <p>작성일: {{list.reg_date_format}}</p>
+<!--/loop(list)-->
 ```
 
 ### 날짜 비교
@@ -464,82 +385,19 @@ if(now.compareTo(expireDate) > 0) {
 }
 ```
 
-## 실전 프롬프트 예시
-
-### 게시판 CRUD 추가
-
-```
-게시판 CRUD 기능을 만들어줘.
-
-테이블: tb_board
-필드: id, user_id, title, content, view_count, reg_date
-
-DAO: BoardDao
-페이지:
-- board_list.jsp (목록, 페이징 10개)
-- board_view.jsp (상세보기, 조회수 증가)
-- board_write.jsp (작성, Postback 패턴)
-- board_modify.jsp (수정, 권한 체크)
-- board_delete.jsp (삭제, POST만 허용)
-
-ListManager 사용, JOIN으로 작성자 이름 표시.
-```
-
-### 검색 기능 추가
-
-```
-게시판 검색 기능을 추가해줬으면 해.
-
-검색 조건:
-- keyword: 제목+내용 (LIKE)
-- category: 카테고리 (완전 일치)
-- date_from, date_to: 작성일 범위
-
-ListManager.addSearch, addWhere 사용.
-검색 폼도 같이 만들어줘.
-```
-
-### 댓글 기능 추가
-
-```
-게시글에 댓글 기능을 추가해줘.
-
-테이블: tb_comment
-필드: id, board_id, user_id, content, reg_date
-
-DAO: CommentDao
-API: /api/comment_list.jsp, /api/comment_create.jsp, /api/comment_delete.jsp
-
-board_view.jsp에 댓글 목록과 작성 폼 추가.
-AJAX로 처리.
-```
-
-## 체크리스트
-
-데이터베이스 작업 시 확인사항:
-
-- [ ] DAO 클래스에서 table과 PK를 설정했는가?
-- [ ] DataSet.next() 호출 후 데이터를 사용하는가?
-- [ ] SQL Injection 방지를 위해 PreparedStatement 패턴을 사용하는가?
-- [ ] 날짜 필드를 VARCHAR(14)로 저장하는가?
-- [ ] 날짜 포맷팅을 했는가?
-- [ ] ListManager에서 JOIN 사용 시 테이블 별칭을 붙였는가?
-- [ ] 검색 조건을 안전하게 처리했는가?
-- [ ] 트랜잭션이 필요한 경우 db.transaction()을 사용했는가?
-
 ## 자주 하는 실수
 
 ### 1. next() 호출 누락
 
 ```jsp
-// ❌ 잘못된 코드
-DataSet info = board.findById(id);
+// 잘못된 코드
+DataSet info = board.find("id = " + id);
 String title = info.s("title");  // 데이터 없음!
 
-// ✅ 올바른 코드
-DataSet info = board.findById(id);
+// 올바른 코드
+DataSet info = board.find("id = " + id);
 if(!info.next()) {
-    m.jsAlert("데이터를 찾을 수 없습니다.");
+    m.jsError("데이터를 찾을 수 없습니다.");
     return;
 }
 String title = info.s("title");
@@ -548,21 +406,21 @@ String title = info.s("title");
 ### 2. 날짜 형식 오류
 
 ```jsp
-// ❌ 잘못된 코드
-info.put("reg_date", new Date());  // Java Date 객체
+// 잘못된 코드
+board.item("reg_date", new Date());  // Java Date 객체
 
-// ✅ 올바른 코드
-info.put("reg_date", m.time("yyyyMMddHHmmss"));
+// 올바른 코드
+board.item("reg_date", m.time("yyyyMMddHHmmss"));
 ```
 
 ### 3. SQL Injection 위험
 
 ```jsp
-// ❌ 잘못된 코드 (위험!)
+// 잘못된 코드 (위험!)
 String keyword = f.get("keyword");
 DataSet list = board.find("title LIKE '%" + keyword + "%'");
 
-// ✅ 올바른 코드
+// 올바른 코드
 String keyword = f.get("keyword");
 lm.addSearch("title", keyword, "LIKE");
 ```
@@ -570,11 +428,11 @@ lm.addSearch("title", keyword, "LIKE");
 ### 4. JOIN 별칭 누락
 
 ```jsp
-// ❌ 잘못된 코드
+// 잘못된 코드
 lm.setTable("tb_board LEFT JOIN tb_user ON tb_board.user_id = tb_user.id");
 lm.setFields("*");  // 컬럼명 충돌!
 
-// ✅ 올바른 코드
+// 올바른 코드
 lm.setTable("tb_board b LEFT JOIN tb_user u ON b.user_id = u.id");
 lm.setFields("b.*, u.name as user_name");
 ```

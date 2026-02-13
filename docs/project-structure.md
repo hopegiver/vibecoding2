@@ -196,53 +196,51 @@ pages-project/
 ```
 malgn-project/
 ├── .claude/
+│   ├── settings.json        # 권한 및 훅 설정
 │   ├── rules/
-│   │   ├── core-principles.md
-│   │   └── coding-rules.md
+│   │   └── malgn.md         # 코딩 규칙 (MCP 참조)
 │   ├── commands/
-│   │   └── crud.md
-│   └── templates/
-│       ├── crud-list.md
-│       └── crud-insert.md
-├── CLAUDE.md
-├── public_html/
-│   ├── css/
-│   │   └── base.css
-│   ├── js/
-│   │   └── common.js
-│   ├── WEB-INF/
-│   │   ├── config.xml       # 프레임워크 설정
-│   │   ├── lib/
-│   │   └── classes/
-│   ├── init.jsp             # 전역 초기화
-│   ├── main/                # 메인 모듈
-│   │   ├── index.jsp
-│   │   ├── user_list.jsp
-│   │   ├── user_insert.jsp
-│   │   ├── user_modify.jsp
-│   │   └── user_view.jsp
-│   ├── member/              # 회원 모듈
-│   │   ├── login.jsp
-│   │   ├── register.jsp
-│   │   └── profile.jsp
-│   ├── admin/               # 관리자 모듈
-│   │   └── dashboard.jsp
-│   └── html/                # HTML 템플릿
-│       ├── layout/
-│       │   └── default.html
-│       ├── main/
-│       │   ├── user_list.html
-│       │   ├── user_form.html
-│       │   └── user_view.html
-│       └── member/
-│           ├── login.html
-│           └── register.html
-└── src/
-    └── dao/                 # DAO 클래스
-        ├── UserDao.java
-        ├── BoardDao.java
-        └── ProductDao.java
-
+│   │   ├── crud.md          # CRUD 생성 커맨드
+│   │   ├── api.md           # API 생성 커맨드
+│   │   ├── new-page.md      # 페이지 생성 커맨드
+│   │   ├── schema.md        # 스키마 생성 커맨드
+│   │   ├── validate.md      # 코드 검증 커맨드
+│   │   └── review.md        # 코드 리뷰 커맨드
+│   └── hooks/
+│       └── post-write.sh    # 자동 검증 훅
+├── .mcp.json                # MCP 서버 설정
+├── CLAUDE.md                # 프로젝트 컨텍스트
+├── GUIDE.md                 # 코딩 가이드 (상세)
+├── build.xml                # Ant 빌드 스크립트
+├── schema.sql               # DB 스키마
+├── src/
+│   └── dao/                 # DAO 클래스 (Java)
+│       ├── UserDao.java
+│       ├── BoardDao.java
+│       └── ApplyDao.java
+└── public_html/
+    ├── init.jsp             # 공통 초기화
+    ├── index.jsp            # 루트 리다이렉트
+    ├── main/                # 메인 모듈
+    ├── member/              # 회원 모듈
+    ├── board/               # 게시판 모듈
+    ├── admin/               # 관리자 모듈
+    ├── html/                # HTML 템플릿
+    │   ├── layout/          # 레이아웃 (layout_xxx.html)
+    │   ├── main/
+    │   ├── member/
+    │   └── board/
+    ├── api/                 # REST API
+    │   ├── init.jsp         # API 초기화 (JWT, CORS)
+    │   └── index.jsp        # API 라우터
+    ├── assets/              # 정적 파일
+    │   ├── css/
+    │   └── js/common.js
+    └── WEB-INF/
+        ├── config.xml       # DB 설정 (JNDI)
+        ├── web.xml          # 서블릿 매핑 (/api/*)
+        ├── lib/malgn.jar    # 프레임워크 라이브러리
+        └── classes/         # 컴파일된 DAO
 ```
 
 ### 파일 명명 규칙
@@ -251,17 +249,15 @@ malgn-project/
 - **HTML 파일**: `snake_case` (예: `user_list.html`)
 - **DAO 클래스**: `PascalCase` (예: `UserDao.java`)
 - **테이블**: `tb_` 접두사 (예: `tb_user`, `tb_board`)
+- **레이아웃**: `layout_` 접두사 (예: `layout_main.html`)
 
 ### 핵심 원칙
 
-✅ **JSP와 HTML 완전 분리**
-- JSP: 로직만 (DB 조회, 처리)
-- HTML: 템플릿만 (마크업)
-
-❌ **절대 금지**
-- JSP에 HTML 작성
-- try-catch 사용
-- POST 처리 후 return 없음
+- JSP와 HTML 완전 분리 (JSP: 로직, HTML: 출력)
+- MCP 도구로 규칙/패턴/클래스 참조
+- try-catch 금지, boolean 리턴 사용
+- POST 처리 후 return 필수
+- DAO 수정 시 `ant compile` 필수
 
 ---
 

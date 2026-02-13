@@ -1,735 +1,179 @@
-# 맑은프레임워크 .claude 설정 예제
+# 맑은프레임워크 .claude 설정
 
 ## 개요
 
-이 문서는 맑은프레임워크 프로젝트를 위한 `.claude` 폴더 설정 예제를 제공합니다. 실제 운영 중인 맑은프레임워크 프로젝트의 설정과 [코딩 원칙 문서](../malgn-template/docs/coding-principles.md)를 기반으로 작성되었습니다.
+맑은프레임워크 프로젝트는 MCP 서버를 활용하여 코딩 규칙과 패턴을 관리합니다. `.claude/rules/`에 모든 규칙을 직접 작성하는 대신, MCP 도구를 통해 동적으로 참조합니다.
+
+## 설정 파일 구조
+
+```
+malgn-project/
+├── .claude/
+│   ├── settings.json          # 권한, 훅 설정
+│   ├── rules/
+│   │   └── malgn.md           # MCP 참조 규칙
+│   └── hooks/
+│       └── post-write.sh      # 자동 검증 훅
+├── .mcp.json                  # MCP 서버 설정
+└── CLAUDE.md                  # 프로젝트 컨텍스트
+```
+
+## 1. `.mcp.json`
+
+MCP 서버 연결 설정. 프로젝트 클론 시 자동 적용됩니다.
+
+```json
+{
+  "mcpServers": {
+    "malgn": {
+      "type": "http",
+      "url": "https://malgn-mcp.apiserver.kr/mcp"
+    }
+  }
+}
+```
+
+## 2. `.claude/settings.json`
+
+권한과 훅을 설정합니다.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(ant compile:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "mcp__malgn__*"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git checkout .:*)",
+      "Bash(git clean -f:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-write.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**권한 설명:**
+- `ant compile`: DAO 컴파일 자동 허용
+- `git` 명령어: 기본 git 작업 허용
+- `mcp__malgn__*`: MCP 도구 전체 자동 허용
+- 파괴적 git 명령어는 거부
+
+**훅 설명:**
+- 파일 작성/편집 시 자동으로 `post-write.sh` 실행
+- 코딩 규칙 위반을 자동 체크
+
+## 3. `.claude/rules/malgn.md`
+
+규칙 상세는 MCP에 위임하고, 최소한의 절대 규칙만 명시합니다.
+
+```markdown
+# 맑은프레임워크 핵심 규칙
+
+이 프로젝트는 맑은프레임워크(JSP) 기반이다. 상세 규칙/패턴/클래스 정보는
+MCP 도구(get_context, get_pattern, get_class, validate_code 등)로 조회할 것.
+
+## 코딩 시 MCP 활용
+- 작업 시작: get_context(task, table_name) 로 규칙+패턴+클래스 일괄 조회
+- 코드 완성 후: validate_code(code, file_type) 로 규칙 위반 검증
+
+## 절대 규칙
+- JSP 시작: <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
+- JSP에 <%@ page import %> 금지, HTML 직접 작성 금지, <%= %> 금지, try-catch 금지
+- JSP는 로직만, HTML은 /html/ 폴더 템플릿으로 완전 분리
+- Page 순서: setLayout → setBody → setVar → setLoop → display
+- DAO 변수명: tb_ 제거 후 소문자 (UserDao user), DataSet: 단일=info, 복수=list
+- GET: m.rs()/m.ri(), POST: f.get()/f.getInt() — request.getParameter() 금지
+- null 체크 불필요 (프레임워크가 빈 문자열 반환)
+- SQL 바인딩 필수: find("id = ?", new Object[]{id})
+- POST 처리 후 return 필수
+- m, f, p, j, auth, isLogin, userId 는 init.jsp에서 자동 초기화됨
+```
+
+## 4. `CLAUDE.md`
+
+프로젝트 개요와 구조를 간결하게 기술합니다.
+
+```markdown
+# 맑은프레임워크 템플릿 프로젝트
+
+JSP 기반 맑은프레임워크(malgn framework) 웹 애플리케이션 템플릿.
+
+## 기술 스택
+- 백엔드: JSP/Servlet, 맑은프레임워크 (malgn.jar)
+- 프론트: Bootstrap 5, HTML 템플릿 엔진
+- DB: MySQL (JNDI 연결)
+- API: RESTful + JWT 인증
+- 빌드: Ant (ant compile)
 
 ## 프로젝트 구조
-
-```
-your-malgn-project/
-├── .claude/
-│   └── rules/
-│       ├── core-principles.md     # 핵심 원칙
-│       └── coding-rules.md        # 코딩 규칙
-├── CLAUDE.md                       # 프로젝트 컨텍스트 (선택)
-├── public_html/
-│   ├── WEB-INF/
-│   │   └── config.xml              # 프레임워크 설정
-│   ├── init.jsp                    # 전역 초기화
-│   ├── main/                       # JSP 페이지
-│   └── html/                       # HTML 템플릿
-└── src/
-    └── dao/                        # DAO 클래스
-```
-
-## 1. `.claude/rules/core-principles.md`
-
-맑은프레임워크의 핵심 설계 철학을 설명합니다.
-
-```markdown
-# 맑은프레임워크 핵심 원칙
-
-## ⚡ 절대 원칙 (이것만은 반드시 지켜라)
-
-### 1. JSP와 HTML 완전 분리
-
-**JSP는 로직만, HTML은 출력만**
-
-❌ **절대 금지:**
-\`\`\`jsp
-<%
-while(list.next()) {
-%>
-    <div class="user">
-        <h3><%= list.s("name") %></h3>
-    </div>
-<%
-}
-%>
-\`\`\`
-
-✅ **반드시 이렇게:**
-
-JSP 파일 (`/main/user_list.jsp`):
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-UserDao user = new UserDao();
-DataSet list = user.find();
-
-p.setLayout("default");
-p.setBody("main.user_list");
-p.setLoop("users", list);
-p.display();
-%>
-\`\`\`
-
-HTML 파일 (`/html/main/user_list.html`):
-\`\`\`html
-<!--@loop(users)-->
-<div class="user">
-    <h3>{{users.name}}</h3>
-</div>
-<!--/loop(users)-->
-\`\`\`
-
-**이유:**
-- 디자이너는 HTML만, 개발자는 Java만 집중
-- 로직 변경 시 HTML 수정 불필요
-- HTML 변경 시 로직 수정 불필요
-
-### 2. try-catch 사용 금지
-
-**프레임워크가 모든 예외를 처리합니다**
-
-❌ **절대 금지:**
-\`\`\`jsp
-<%
-try {
-    user.insert();
-    m.p("성공");
-} catch(Exception e) {
-    m.p("오류: " + e.getMessage());
-}
-%>
-\`\`\`
-
-✅ **반드시 이렇게:**
-\`\`\`jsp
-<%
-if(user.insert()) {
-    m.p("성공");
-} else {
-    m.p("오류: " + user.getErrMsg());
-}
-%>
-\`\`\`
-
-**동작 방식:**
-- boolean 리턴값으로 성공/실패 판단
-- `getErrMsg()`로 에러 메시지 확인
-- 모든 예외는 자동으로 로그 파일에 기록
-
-### 3. 템플릿에 로직 넣지 말 것
-
-**템플릿은 출력 전용**
-
-❌ **절대 금지:**
-\`\`\`html
-<option {{status == 'active' ? 'selected' : ''}}>활성</option>
-<div>{{ price * quantity }}</div>
-<span>{{ user.getName().toUpperCase() }}</span>
-\`\`\`
-
-✅ **반드시 이렇게:**
-
-JSP에서 로직 처리:
-\`\`\`jsp
-<%
-p.setVar("selected", status.equals("active") ? "selected" : "");
-p.setVar("total", price * quantity);
-p.setVar("userName", user.getName().toUpperCase());
-%>
-\`\`\`
-
-템플릿은 출력만:
-\`\`\`html
-<option {{selected}}>활성</option>
-<div>{{total}}</div>
-<span>{{userName}}</span>
-\`\`\`
-
-## 데이터 처리 원칙
-
-### 1. GET/POST 파라미터 구분
-
-**보안을 위해 반드시 다른 메소드 사용**
-
-✅ **GET 파라미터: m.rs(), m.ri()** (XSS 필터 자동)
-\`\`\`jsp
-<%
-String keyword = m.rs("keyword");  // 검색어
-int page = m.ri("page");           // 페이지 번호
-int id = m.ri("id");               // 조회 ID
-%>
-\`\`\`
-
-✅ **POST 파라미터: f.get()** (원본 데이터)
-\`\`\`jsp
-<%
-if(m.isPost()) {
-    user.item("name", f.get("name"));
-    user.item("content", f.get("content"));  // HTML 에디터 내용
-}
-%>
-\`\`\`
-
-**이유:**
-- GET 파라미터는 URL에 노출되므로 XSS 필터 필요
-- POST 데이터는 DB에 저장할 원본 (HTML 에디터 내용 등)
-
-### 2. DataSet 사용 전 반드시 next() 호출
-
-**커서를 첫 레코드로 이동**
-
-❌ **금지:**
-\`\`\`jsp
-<%
-UserDao user = new UserDao();
-DataSet info = user.get(123);
-String name = info.s("name");  // 에러 또는 빈 값!
-%>
-\`\`\`
-
-✅ **올바름:**
-\`\`\`jsp
-<%
-UserDao user = new UserDao();
-DataSet info = user.get(123);
-
-if(info.next()) {
-    String name = info.s("name");
-    m.p("이름: " + name);
-} else {
-    m.p("데이터를 찾을 수 없습니다.");
-}
-%>
-\`\`\`
-
-**이유:**
-- DataSet의 커서는 초기에 -1 위치
-- next()로 첫 번째 레코드로 이동 필요
-- next()는 레코드 존재 여부도 확인 (boolean 리턴)
-
-### 3. POST 처리 후 반드시 return
-
-**이중 실행 방지**
-
-❌ **금지:**
-\`\`\`jsp
-<%
-if(m.isPost()) {
-    user.insert();
-    m.jsAlert("완료");
-    // return 없음!
-}
-p.display();  // POST 후에도 실행됨
-%>
-\`\`\`
-
-✅ **올바름:**
-\`\`\`jsp
-<%
-if(m.isPost() && f.validate()) {
-    user.insert();
-    m.jsAlert("완료");
-    m.jsReplace("list.jsp");
-    return;  // 필수!
-}
-p.display();
-%>
-\`\`\`
-
-## 페이지 개발 패턴
-
-### Postback 패턴 (필수)
-
-**등록/수정은 같은 JSP에서 처리**
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-// 유효성 검증 규칙 설정
-f.addElement("name", null, "required:Y, minLen:2, maxLen:50");
-f.addElement("email", null, "required:Y, email:Y");
-
-// POST 처리 (등록)
-if(m.isPost() && f.validate()) {
-    UserDao user = new UserDao();
-    user.item("name", f.get("name"));
-    user.item("email", f.get("email"));
-    user.item("reg_date", m.time());
-
-    if(user.insert()) {
-        m.jsAlert("등록되었습니다.");
-        m.jsReplace("list.jsp");
-    } else {
-        m.jsError("등록 실패: " + user.getErrMsg());
-    }
-    return;
-}
-
-// GET 처리 (폼 표시)
-p.setLayout("default");
-p.setBody("main.user_form");
-p.setVar("is_insert", true);
-p.setVar("form_script", f.getScript());  // 클라이언트 검증 스크립트
-p.display();
-%>
-\`\`\`
-
-**이유:**
-- 한 파일에서 폼과 처리를 모두 담당
-- 에러 발생 시 같은 페이지에서 재입력 가능
-- 파일 수 감소로 프로젝트 구조 단순화
-
-### Page 메소드 호출 순서
-
-**반드시 이 순서로 호출**
-
-\`\`\`jsp
-<%
-p.setLayout("default");         // 1. 레이아웃 설정 (선택)
-p.setBody("main.content");      // 2. 본문 템플릿 (필수)
-p.setVar("title", "제목");       // 3. 변수 설정
-p.setLoop("list", dataSet);     // 4. 반복 데이터
-p.display();                    // 5. 출력 (필수)
-%>
-\`\`\`
-
-**이유:**
-- 템플릿 파일을 먼저 지정해야 변수 바인딩 가능
-- 순서를 지키지 않으면 변수가 치환되지 않음
-
-## 데이터베이스 원칙
-
-### 날짜는 VARCHAR + m.time()
-
-**데이터베이스 벤더 종속성 제거**
-
-❌ **금지: 데이터베이스별 함수**
-\`\`\`jsp
-<%
-user.item("reg_date", "NOW()", "function");      // MySQL
-user.item("reg_date", "SYSDATE", "function");    // Oracle
-user.item("reg_date", "GETDATE()", "function");  // MSSQL
-%>
-\`\`\`
-
-✅ **올바름: m.time() 사용**
-\`\`\`jsp
-<%
-user.item("reg_date", m.time());                 // 20250124153045
-user.item("reg_date", m.time("yyyyMMddHHmmss")); // 20250124153045
-user.item("mod_date", m.time("yyyyMMdd"));       // 20250124
-%>
-\`\`\`
-
-**테이블 정의:**
-\`\`\`sql
-CREATE TABLE tb_user (
-    id INT PRIMARY KEY,
-    name VARCHAR(50),
-    reg_date VARCHAR(14),   -- yyyyMMddHHmmss
-    birth_date VARCHAR(8)   -- yyyyMMdd
-);
-\`\`\`
-
-**이유:**
-- 모든 데이터베이스에서 동일한 코드 사용
-- 문자열 비교로 날짜 범위 검색 가능
-- DB 마이그레이션 시 코드 수정 불필요
-
-### 페이징이 필요 없으면 ListManager 사용 금지
-
-**불필요한 COUNT 쿼리 실행 방지**
-
-❌ **비효율:**
-\`\`\`jsp
-<%
-// Excel 다운로드인데 ListManager 사용 (COUNT + SELECT 2번 실행)
-ListManager lm = new ListManager();
-lm.setTable("tb_user");
-lm.setListNum(999999);
-DataSet list = lm.getDataSet();
-%>
-\`\`\`
-
-✅ **효율:**
-\`\`\`jsp
-<%
-// 페이징 불필요 시 DataObject 사용 (SELECT 1번만 실행)
-UserDao user = new UserDao();
-DataSet list = user.find();
-%>
-\`\`\`
-```
-
-## 2. `.claude/rules/coding-rules.md`
-
-구체적인 코딩 규칙과 패턴을 정의합니다.
-
-```markdown
-# 맑은프레임워크 코딩 규칙
-
-## 필수 임포트
-
-**모든 JSP 파일 상단에 include**
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-\`\`\`
-
-**/public_html/init.jsp 내용:**
-\`\`\`jsp
-<%@ page import="java.util.*, java.io.*, malgnsoft.db.*, malgnsoft.util.*" %><%
-
-Malgn m = new Malgn(request, response, out);
-Form f = new Form(request);
-Page p = new Page(request, response, out, pageContext);
-
-// 인증 처리
-Auth auth = new Auth(request, response);
-int userId = 0;
-String userName = "";
-
-if(auth.isValid()) {
-    userId = auth.getInt("user_id");
-    userName = auth.getString("user_name");
-}
-
-p.setVar("userId", userId);
-p.setVar("userName", userName);
-%>
-\`\`\`
-
-## 폼 처리 패턴
-
-### 1. 등록 페이지
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-// 유효성 검증 설정
-f.addElement("name", null, "required:Y, minLen:2, maxLen:50");
-f.addElement("email", null, "required:Y, email:Y");
-
-// POST 처리
-if(m.isPost() && f.validate()) {
-    UserDao user = new UserDao();
-    user.item("name", f.get("name"));
-    user.item("email", f.get("email"));
-    user.item("reg_date", m.time());
-
-    if(user.insert()) {
-        m.jsAlert("등록되었습니다.");
-        m.jsReplace("list.jsp");
-    } else {
-        m.jsError(user.getErrMsg());
-    }
-    return;
-}
-
-// GET 처리
-p.setLayout("default");
-p.setBody("main.user_form");
-p.setVar("is_insert", true);
-p.setVar("form_script", f.getScript());
-p.display();
-%>
-\`\`\`
-
-### 2. 수정 페이지
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-int id = m.ri("id");
-
-// 데이터 조회 (먼저!)
-UserDao user = new UserDao();
-DataSet info = user.find("id = ?", new Object[]{id});
-
-if(!info.next()) {
-    m.jsError("데이터를 찾을 수 없습니다.");
-    return;
-}
-
-// 유효성 검증 설정 (기존 값 설정)
-f.addElement("name", info.s("name"), "required:Y");
-f.addElement("email", info.s("email"), "required:Y, email:Y");
-
-// POST 처리
-if(m.isPost() && f.validate()) {
-    user.item("name", f.get("name"));
-    user.item("email", f.get("email"));
-    user.item("mod_date", m.time());
-
-    if(user.update("id = ?", new Object[]{id})) {
-        m.jsAlert("수정되었습니다.");
-        m.jsReplace("list.jsp");
-    } else {
-        m.jsError(user.getErrMsg());
-    }
-    return;
-}
-
-// GET 처리
-p.setLayout("default");
-p.setBody("main.user_form");
-p.setVar("is_modify", true);
-p.setVar("form_script", f.getScript());
-p.display();
-%>
-\`\`\`
-
-## 조회 및 목록 패턴
-
-### 1. 목록 페이지 (페이징 O)
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-String keyword = m.rs("keyword");
-
-ListManager lm = new ListManager();
-lm.setRequest(request);
-lm.setTable("tb_user");
-lm.setListNum(20);
-
-if(!"".equals(keyword)) {
-    lm.addSearch("name,email", keyword, "LIKE");
-}
-
-lm.setOrderBy("id DESC");
-DataSet list = lm.getDataSet();
-String paging = lm.getPaging();
-
-p.setLayout("default");
-p.setBody("main.user_list");
-p.setVar("keyword", keyword);
-p.setVar("paging", paging);
-p.setLoop("list", list);
-p.display();
-%>
-\`\`\`
-
-### 2. 목록 페이지 (페이징 X)
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-String keyword = m.rs("keyword");
-
-UserDao user = new UserDao();
-
-if(!"".equals(keyword)) {
-    user.addSearch("name,email", keyword, "LIKE");
-}
-
-user.setOrderBy("id DESC");
-DataSet list = user.find();
-
-p.setLayout("default");
-p.setBody("main.user_list");
-p.setVar("keyword", keyword);
-p.setLoop("list", list);
-p.display();
-%>
-\`\`\`
-
-### 3. 상세 페이지
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-int id = m.ri("id");
-
-UserDao user = new UserDao();
-DataSet info = user.find("id = ?", new Object[]{id});
-
-if(!info.next()) {
-    m.jsError("데이터를 찾을 수 없습니다.");
-    return;
-}
-
-p.setLayout("default");
-p.setBody("main.user_view");
-p.setVar("name", info.s("name"));
-p.setVar("email", info.s("email"));
-p.setVar("reg_date", m.time("yyyy-MM-dd", info.s("reg_date")));
-p.display();
-%>
-\`\`\`
-
-## API 응답 패턴
-
-### 1. JSON 응답 (AJAX)
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-Json j = new Json();
-
-if(m.isPost()) {
-    UserDao user = new UserDao();
-    user.item("name", f.get("name"));
-
-    if(user.insert()) {
-        j.success("등록되었습니다.", user.id);
-    } else {
-        j.error(user.getErrMsg());
-    }
-}
-%>
-\`\`\`
-
-### 2. REST API
-
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-Json j = new Json();
-RestAPI api = new RestAPI(request, response);
-
-api.get(() -> {
-    UserDao user = new UserDao();
-    DataSet list = user.find();
-    j.add("users", list);
-    j.print();
-});
-
-api.post(() -> {
-    UserDao user = new UserDao();
-    user.item("name", f.get("name"));
-
-    if(user.insert()) {
-        j.success("등록되었습니다.", user.id);
-    } else {
-        j.error(user.getErrMsg());
-    }
-});
-%>
-\`\`\`
-
-## 권한 체크 패턴
-
-### 폴더별 init.jsp 활용
-
-**/public_html/admin/init.jsp:**
-\`\`\`jsp
-<%@ include file="/init.jsp" %><%
-
-// 관리자 권한 체크
-if(userLevel < 9) {
-    m.jsError("관리자 권한이 필요합니다.");
-    m.jsReplace("/main/index.jsp");
-    return;
-}
-%>
-\`\`\`
-
-**/public_html/admin/user_list.jsp:**
-\`\`\`jsp
-<%@ include file="init.jsp" %><%
-// 이미 권한 체크됨
-
-UserDao user = new UserDao();
-DataSet list = user.find();
-
-p.setLayout("admin");
-p.setBody("admin.user_list");
-p.setLoop("list", list);
-p.display();
-%>
-\`\`\`
-
-## 금지 사항
-
-- ❌ JSP에 HTML 마크업 작성
-- ❌ try-catch 사용
-- ❌ 템플릿에 로직 넣기
-- ❌ POST 후 return 누락
-- ❌ DataSet에서 next() 호출 누락
-- ❌ GET 파라미터를 f.get()으로 받기
-- ❌ POST 데이터를 m.rs()로 받기
-- ❌ AJAX 요청에서 jsReplace/redirect 사용
-- ❌ 페이징 불필요한데 ListManager 사용
-```
-
-## 3. `CLAUDE.md` (선택)
-
-간단한 프로젝트 개요만 제공합니다.
-
-```markdown
-# 맑은프레임워크 프로젝트
-
-## 프로젝트 개요
-맑은프레임워크 기반 웹 애플리케이션. JSP + MyBatis를 사용한 전통적인 Java 웹 애플리케이션으로, 템플릿 엔진을 통한 뷰 분리 패턴을 적용.
-
-**기술 스택:** Java + JSP + MyBatis + 맑은프레임워크 1.14.0
-
-## 핵심 원칙
-
-1. ✅ JSP와 HTML 완전 분리
-2. ✅ try-catch 사용 금지
-3. ✅ POST 처리 후 반드시 return
-4. ✅ GET은 m.rs()/m.ri(), POST는 f.get()
-5. ✅ DataSet 사용 전 next() 호출
-6. ✅ 날짜는 VARCHAR(14) + m.time()
-
-## 파일 구조
-
-\`\`\`
+src/dao/              DAO 클래스 (Java) → ant compile로 빌드
 public_html/
-├── init.jsp                # 전역 초기화
-├── main/                   # 메인 JSP
-│   ├── user_list.jsp
-│   └── user_insert.jsp
-└── html/                   # HTML 템플릿
-    └── main/
-        └── user_list.html
+  init.jsp            공통 초기화 (m, f, p, j, auth 자동 생성)
+  {기능}/              JSP (로직만)
+  html/layout/        레이아웃 HTML (layout_xxx.html)
+  html/{기능}/         본문 HTML 템플릿
+  api/init.jsp        API 초기화 (JWT, CORS)
+  api/{기능}.jsp       REST API 엔드포인트
+  WEB-INF/config.xml  프레임워크 설정
+schema.sql            DB 스키마
 
-src/
-└── dao/
-    └── UserDao.java
-\`\`\`
+## 작업 워크플로우
+1. MCP get_context(task, table_name) 로 규칙/패턴/클래스 조회
+2. MCP get_pattern(type) 으로 표준 패턴 참조하여 코딩
+3. MCP validate_code(code, file_type) 로 규칙 위반 검증
+4. DAO 수정 시 ant compile 로 컴파일
 
----
-**개발 규칙:** `.claude/rules/` 폴더 참조
+## MCP 도구 (malgn)
+- get_context — 작업별 규칙+패턴+클래스 일괄 조회
+- get_pattern — 코드 패턴 템플릿
+- get_class — 클래스 메소드 상세 조회
+- get_rules — 코딩 규칙 조회
+- validate_code — 코드 규칙 위반 검증
+- get_doc / search_docs — 프레임워크 문서 조회
 ```
 
-## 4. 실전 활용 예시
+## 5. 슬래시 커맨드
 
-### 새로운 CRUD 페이지 추가 요청
+`.claude/commands/` 폴더에 자주 사용하는 작업을 커맨드로 정의합니다.
 
-```
-프롬프트: "게시판 CRUD 페이지를 만들어줘. /board 경로에 list, insert, modify, delete 페이지를 추가해줘."
-```
+| 커맨드 | 파일 | 설명 |
+|--------|------|------|
+| `/project:crud` | `crud.md` | CRUD 전체 생성 |
+| `/project:api` | `api.md` | REST API 생성 |
+| `/project:new-page` | `new-page.md` | 단일 페이지 생성 |
+| `/project:schema` | `schema.md` | 테이블 스키마 생성 |
+| `/project:validate` | `validate.md` | 코드 규칙 검증 |
+| `/project:review` | `review.md` | 코드 리뷰 |
 
-**Claude Code의 동작:**
-1. `.claude/rules/core-principles.md` 읽고 JSP/HTML 분리 확인
-2. `.claude/rules/coding-rules.md`에서 패턴 확인
-3. 다음 파일들 생성:
-   - `/public_html/board/board_list.jsp` (목록, ListManager 사용)
-   - `/public_html/board/board_insert.jsp` (등록, Postback 패턴)
-   - `/public_html/board/board_modify.jsp` (수정, Postback 패턴)
-   - `/public_html/board/board_delete.jsp` (삭제 처리)
-   - `/public_html/html/board/board_list.html` (목록 템플릿)
-   - `/public_html/html/board/board_form.html` (등록/수정 공용 템플릿)
-   - `/src/dao/BoardDao.java` (DAO 클래스)
-4. 모든 파일이 규칙을 준수:
-   - JSP에 HTML 없음
-   - try-catch 없음
-   - Postback 패턴 적용
-   - 유효성 검증 포함
+커맨드 내에서 MCP 도구를 호출하도록 작성하면, 규칙을 자동으로 준수하는 코드가 생성됩니다.
 
-## 효과
+## MCP 기반 접근의 장점
 
-이 `.claude` 설정으로:
-- ✅ JSP와 HTML이 완전히 분리된 코드 생성
-- ✅ try-catch 대신 boolean 체크로 예외 처리
-- ✅ Postback 패턴을 자동으로 적용
-- ✅ GET/POST 파라미터를 올바르게 구분
-- ✅ DataSet 사용 시 항상 next() 호출
-- ✅ 유효성 검증 자동 추가
-- ✅ 날짜 처리를 VARCHAR + m.time()으로 통일
-
-## 다음 단계
-
-- [Pages .claude 설정 예제](pages-claude-setup.md)
-- [Workers .claude 설정 예제](workers-claude-setup.md)
-- [MCP 서버 설정 및 활용](mcp-setup.md)
+- rules 파일을 최소화 (토큰 절약)
+- 규칙 업데이트 시 MCP 서버만 수정 (프로젝트 코드 변경 불필요)
+- 모든 프로젝트에 동일한 규칙 자동 적용
+- 코드 검증까지 자동화
 
 ---
 

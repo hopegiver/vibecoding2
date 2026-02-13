@@ -124,7 +124,7 @@ response.sendRedirect("/main/index.jsp");
 
 // 로그인 체크
 if(!isLogin) {
-    m.jsAlert("로그인이 필요합니다.");
+    m.jsError("로그인이 필요합니다.");
     m.jsReplace("/member/login.jsp");
     return;
 }
@@ -140,7 +140,7 @@ if(!isLogin) {
 <%@ page contentType="text/html; charset=utf-8" %><%@ include file="/init.jsp" %><%
 
 if(!isLogin) {
-    m.jsAlert("로그인이 필요합니다.");
+    m.jsError("로그인이 필요합니다.");
     m.jsReplace("/member/login.jsp");
     return;
 }
@@ -149,14 +149,14 @@ int boardId = m.ri("id");
 BoardDao board = new BoardDao();
 DataSet info = board.findById(boardId);
 if(!info.next()) {
-    m.jsAlert("게시글을 찾을 수 없습니다.");
+    m.jsError("게시글을 찾을 수 없습니다.");
     m.jsReplace("/board/board_list.jsp");
     return;
 }
 
 // 권한 체크
 if(info.i("user_id") != userId) {
-    m.jsAlert("수정 권한이 없습니다.");
+    m.jsError("수정 권한이 없습니다.");
     m.jsReplace("/board/board_view.jsp?id=" + boardId);
     return;
 }
@@ -209,7 +209,7 @@ Upload upload = new Upload(request);
 // 숫자 파라미터
 int boardId = m.ri("id");
 if(boardId == 0) {
-    m.jsAlert("잘못된 접근입니다.");
+    m.jsError("잘못된 접근입니다.");
     m.jsReplace("/board/board_list.jsp");
     return;
 }
@@ -266,7 +266,7 @@ p.setVar("rememberEmail", rememberEmail);
 
 ```html
 <form method="post">
-    <input type="email" name="email" value="{rememberEmail}" class="form-control">
+    <input type="email" name="email" value="{{rememberEmail}}" class="form-control">
     <input type="password" name="passwd" class="form-control">
     <label>
         <input type="checkbox" name="remember" value="1"> 이메일 기억하기
@@ -306,18 +306,17 @@ if(m.isPost()) {
 
     // 저장
     BoardDao board = new BoardDao();
-    DataSet newItem = board.create();
-    newItem.put("user_id", userId);
-    newItem.put("title", title);
-    newItem.put("content", content);
-    newItem.put("reg_date", m.time("yyyyMMddHHmmss"));
-    board.save(newItem);
+    board.item("user_id", userId);
+    board.item("title", title);
+    board.item("content", content);
+    board.item("reg_date", m.time("yyyyMMddHHmmss"));
+    board.insert();
 
     j.put("success", true);
     j.put("message", "저장되었습니다.");
-    j.put("redirect", "/board/board_view.jsp?id=" + newItem.i("id"));
+    j.put("redirect", "/board/board_list.jsp");
     j.print();
-    return;  // ⭐ 필수!
+    return;  // 필수!
 }
 
 // GET - 화면 표시
@@ -342,14 +341,14 @@ int boardId = m.ri("id");
 BoardDao board = new BoardDao();
 DataSet info = board.findById(boardId);
 if(!info.next()) {
-    m.jsAlert("게시글을 찾을 수 없습니다.");
+    m.jsError("게시글을 찾을 수 없습니다.");
     m.jsReplace("/board/board_list.jsp");
     return;
 }
 
 // 권한 체크
 if(info.i("user_id") != userId) {
-    m.jsAlert("수정 권한이 없습니다.");
+    m.jsError("수정 권한이 없습니다.");
     m.jsReplace("/board/board_view.jsp?id=" + boardId);
     return;
 }
@@ -367,10 +366,10 @@ if(m.isPost()) {
     }
 
     // 수정
-    info.put("title", title);
-    info.put("content", content);
-    info.put("mod_date", m.time("yyyyMMddHHmmss"));
-    board.save(info);
+    board.item("title", f.get("title"));
+    board.item("content", f.get("content"));
+    board.item("mod_date", m.time("yyyyMMddHHmmss"));
+    board.update("id = " + boardId);
 
     j.put("success", true);
     j.put("message", "수정되었습니다.");
@@ -393,149 +392,19 @@ p.display();
 %>
 ```
 
-## 세션 활용 예제
-
-### 장바구니 기능
-
-**cart/add.jsp:**
-
-```jsp
-<%@ page contentType="application/json; charset=utf-8" %><%@ include file="/init.jsp" %><%
-
-if(!m.isPost()) {
-    j.put("success", false);
-    j.put("message", "잘못된 요청입니다.");
-    j.print();
-    return;
-}
-
-int productId = m.ri("product_id");
-int quantity = m.ri("quantity", 1);
-
-// 세션에서 장바구니 가져오기
-Auth auth = new Auth(request, response);
-String cartJson = auth.getString("cart");
-
-// JSON 파싱 (간단한 예제)
-// 실제로는 JSON 라이브러리 사용 권장
-java.util.HashMap<Integer, Integer> cart = new java.util.HashMap<>();
-
-// 추가
-cart.put(productId, quantity);
-
-// 세션 저장
-auth.set("cart", cart.toString());
-
-j.put("success", true);
-j.put("message", "장바구니에 추가되었습니다.");
-j.put("cart_count", cart.size());
-j.print();
-
-%>
-```
-
-### 최근 본 상품
-
-```jsp
-// 상품 조회 시
-int productId = m.ri("id");
-
-// 세션에서 최근 본 상품 가져오기
-Auth auth = new Auth(request, response);
-String recentStr = auth.getString("recent_products");
-
-// 최대 10개까지 저장
-java.util.LinkedList<Integer> recent = new java.util.LinkedList<>();
-if(!recentStr.isEmpty()) {
-    // 파싱...
-}
-
-// 중복 제거 후 맨 앞에 추가
-recent.remove((Integer)productId);
-recent.addFirst(productId);
-
-// 10개 초과 시 제거
-if(recent.size() > 10) {
-    recent.removeLast();
-}
-
-// 세션 저장
-auth.set("recent_products", recent.toString());
-```
-
-## 실전 프롬프트 예시
-
-### 회원가입 기능 추가
-
-```
-회원가입 기능을 만들어줘.
-
-경로: /member/register.jsp
-필드: email, passwd, name
-DAO: UserDao
-
-기능:
-- 이메일 중복 체크
-- 비밀번호 SHA-256 암호화
-- Postback 패턴
-- 성공 시 자동 로그인 후 메인 페이지로
-
-로그인 페이지에 회원가입 링크 추가.
-```
-
-### 로그인 유지 기능 추가
-
-```
-로그인 페이지에 "자동 로그인" 기능을 추가해줘.
-
-체크박스 추가: remember_login
-체크 시 쿠키 저장 (30일)
-쿠키 내용: user_id (암호화)
-
-login.jsp에서 쿠키 확인 후 자동 로그인 처리.
-```
-
-### 마이페이지 추가
-
-```
-마이페이지를 만들어줘.
-
-경로: /member/mypage.jsp
-표시 정보:
-- 이름, 이메일
-- 가입일 (yyyy-MM-dd HH:mm)
-- 내가 쓴 게시글 목록 (최근 10개)
-
-수정 버튼 추가 (mypage_edit.jsp로 이동).
-로그인 안 되어 있으면 로그인 페이지로 리다이렉트.
-```
-
-## 체크리스트
-
-상태 관리 시 확인사항:
-
-- [ ] 로그인 체크를 했는가? (if(!isLogin))
-- [ ] 권한 체크를 했는가? (작성자 본인 확인)
-- [ ] 비밀번호를 암호화했는가? (m.sha256)
-- [ ] Postback 후 return을 호출했는가?
-- [ ] GET 파라미터를 m.rs()로 받았는가? (XSS 방지)
-- [ ] POST 데이터를 f.get()으로 받았는가? (원본 보존)
-- [ ] 파라미터 유효성 검사를 했는가?
-- [ ] 쿠키 설정 시 setPath("/")를 호출했는가?
-
 ## 자주 하는 실수
 
 ### 1. 로그인 체크 누락
 
 ```jsp
-// ❌ 잘못된 코드
+// 잘못된 코드
 int boardId = m.ri("id");
 BoardDao board = new BoardDao();
 // 로그인 체크 없음!
 
-// ✅ 올바른 코드
+// 올바른 코드
 if(!isLogin) {
-    m.jsAlert("로그인이 필요합니다.");
+    m.jsError("로그인이 필요합니다.");
     m.jsReplace("/member/login.jsp");
     return;
 }
@@ -544,11 +413,11 @@ if(!isLogin) {
 ### 2. 비밀번호 평문 저장
 
 ```jsp
-// ❌ 잘못된 코드 (위험!)
+// 잘못된 코드 (위험!)
 String passwd = f.get("passwd");
 user.put("passwd", passwd);  // 평문 저장
 
-// ✅ 올바른 코드
+// 올바른 코드
 String passwd = f.get("passwd");
 String hashedPasswd = m.sha256(passwd);
 user.put("passwd", hashedPasswd);
@@ -557,21 +426,21 @@ user.put("passwd", hashedPasswd);
 ### 3. GET/POST 혼용
 
 ```jsp
-// ❌ 잘못된 코드
+// 잘못된 코드
 String keyword = f.get("keyword");  // POST가 아님
 
-// ✅ 올바른 코드
+// 올바른 코드
 String keyword = m.rs("keyword");  // GET 파라미터
 ```
 
 ### 4. 쿠키 경로 미설정
 
 ```jsp
-// ❌ 잘못된 코드
+// 잘못된 코드
 Cookie cookie = new Cookie("name", "value");
 response.addCookie(cookie);  // 경로 없음
 
-// ✅ 올바른 코드
+// 올바른 코드
 Cookie cookie = new Cookie("name", "value");
 cookie.setPath("/");  // 전체 경로에서 접근 가능
 response.addCookie(cookie);
@@ -602,7 +471,7 @@ p.setVar("csrfToken", csrfToken);
 
 ```html
 <form method="post">
-    <input type="hidden" name="csrf_token" value="{csrfToken}">
+    <input type="hidden" name="csrf_token" value="{{csrfToken}}">
     <!-- 폼 필드 -->
 </form>
 ```
@@ -624,11 +493,11 @@ if(!submittedToken.equals(sessionToken)) {
 ### 3. SQL Injection 방지
 
 ```jsp
-// ❌ 위험한 코드
+// 잘못된 코드
 String email = f.get("email");
 DataSet user = dao.find("email = '" + email + "'");
 
-// ✅ 안전한 코드
+// 올바른 코드
 String email = f.get("email");
 DataSet user = dao.find("email = ?", new Object[]{email});
 ```

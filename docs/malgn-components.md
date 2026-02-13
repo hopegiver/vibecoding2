@@ -50,9 +50,9 @@ p.setVar("isAdmin", false);
 **HTML:**
 
 ```html
-<p>사용자: {userName}</p>
-<p>메시지: {message}</p>
-<p>총 {total}건</p>
+<p>사용자: {{userName}}</p>
+<p>메시지: {{message}}</p>
+<p>총 {{total}}건</p>
 ```
 
 ### DataSet 객체 전달
@@ -70,13 +70,13 @@ p.setVar("info", info);
 ```html
 <dl>
     <dt>이름</dt>
-    <dd>{info.name}</dd>
+    <dd>{{info.name}}</dd>
 
     <dt>이메일</dt>
-    <dd>{info.email}</dd>
+    <dd>{{info.email}}</dd>
 
     <dt>가입일</dt>
-    <dd>{info.reg_date}</dd>
+    <dd>{{info.reg_date}}</dd>
 </dl>
 ```
 
@@ -95,7 +95,7 @@ p.setVar("info", info);
 **HTML:**
 
 ```html
-<p>가입일: {info.reg_date_format}</p>
+<p>가입일: {{info.reg_date_format}}</p>
 ```
 
 ## 반복 처리 (setLoop)
@@ -118,16 +118,16 @@ p.setLoop("list", list);
 
 ```html
 <ul>
-{#loop list}
+<!--@loop(list)-->
     <li>
-        <a href="board_view.jsp?id={list.id}">{list.title}</a>
-        <span class="text-muted">({list.reg_date_format})</span>
+        <a href="board_view.jsp?id={{list.id}}">{{list.title}}</a>
+        <span class="text-muted">({{list.reg_date_format}})</span>
     </li>
-{#/loop}
+<!--/loop(list)-->
 </ul>
 ```
 
-**주의:** `{#loop list}`에서 `list`는 setLoop의 첫 번째 인자와 일치해야 함
+**주의:** `<!--@loop(list)-->`에서 `list`는 setLoop의 첫 번째 인자와 일치해야 함
 
 ### 테이블 반복
 
@@ -148,14 +148,14 @@ p.setLoop("users", userList);
         </tr>
     </thead>
     <tbody>
-    {#loop users}
+    <!--@loop(users)-->
         <tr>
-            <td>{users.id}</td>
-            <td>{users.name}</td>
-            <td>{users.email}</td>
-            <td>{users.reg_date_format}</td>
+            <td>{{users.id}}</td>
+            <td>{{users.name}}</td>
+            <td>{{users.email}}</td>
+            <td>{{users.reg_date_format}}</td>
         </tr>
-    {#/loop}
+    <!--/loop(users)-->
     </tbody>
 </table>
 ```
@@ -163,36 +163,37 @@ p.setLoop("users", userList);
 ### 빈 목록 처리
 
 ```html
-{#loop list}
+<!--@loop(list)-->
     <div class="card">
-        <h5>{list.title}</h5>
-        <p>{list.content}</p>
+        <h5>{{list.title}}</h5>
+        <p>{{list.content}}</p>
     </div>
-{#empty}
+<!--/loop(list)-->
+<!--@nif(list)-->
     <div class="alert alert-info">
         등록된 게시글이 없습니다.
     </div>
-{#/loop}
+<!--/nif(list)-->
 ```
 
 **동작:**
-- `list`에 데이터가 있으면: 반복
-- `list`가 비어있으면: `{#empty}` 블록 표시
+- `list`에 데이터가 있으면: `<!--@loop(list)-->` 블록 반복
+- `list`가 비어있으면: `<!--@nif(list)-->` 블록 표시
 
 ### 반복 인덱스
 
 ```html
-{#loop list}
+<!--@loop(list)-->
     <div class="item">
-        <span class="badge">{__LOOP_CNT__}</span>
-        <h5>{list.title}</h5>
+        <span class="badge">{{__LOOP_CNT__}}</span>
+        <h5>{{list.title}}</h5>
     </div>
-{#/loop}
+<!--/loop(list)-->
 ```
 
 **변수:**
-- `{__LOOP_CNT__}`: 1부터 시작하는 인덱스 (1, 2, 3, ...)
-- `{__LOOP_IDX__}`: 0부터 시작하는 인덱스 (0, 1, 2, ...)
+- `{{__LOOP_CNT__}}`: 1부터 시작하는 인덱스 (1, 2, 3, ...)
+- `{{__LOOP_IDX__}}`: 0부터 시작하는 인덱스 (0, 1, 2, ...)
 
 ## 조건문 (if)
 
@@ -206,69 +207,87 @@ p.setVar("userName", "홍길동");
 **HTML:**
 
 ```html
-{#if isLogin}
-    <p>안녕하세요, {userName}님!</p>
+<!--@if(isLogin)-->
+    <p>안녕하세요, {{userName}}님!</p>
     <a href="/member/logout.jsp">로그아웃</a>
-{#else}
+<!--/if(isLogin)-->
+<!--@nif(isLogin)-->
     <a href="/member/login.jsp">로그인</a>
-{#/if}
+<!--/nif(isLogin)-->
 ```
 
 ### 비교 연산
 
 ```jsp
-p.setVar("userLevel", 9);
+// 맑은프레임워크는 템플릿에서 비교 연산자를 직접 지원하지 않으므로
+// JSP에서 불린 변수를 미리 계산하여 전달합니다.
+int userLevel = Integer.parseInt(info.s("user_level"));
+p.setVar("isAdmin", userLevel >= 9);
 ```
 
 **HTML:**
 
 ```html
-{#if userLevel >= 9}
+<!--@if(isAdmin)-->
     <span class="badge bg-danger">관리자</span>
-{#else}
+<!--/if(isAdmin)-->
+<!--@nif(isAdmin)-->
     <span class="badge bg-secondary">일반회원</span>
-{#/if}
+<!--/nif(isAdmin)-->
 ```
 
-**지원 연산자:**
-- `==`, `!=`
-- `>`, `<`, `>=`, `<=`
-
-### 다중 조건 (else if)
+### 다중 조건 (상태별 분기)
 
 ```jsp
-p.setVar("status", "pending");
+// 맑은프레임워크는 템플릿에서 비교 연산자와 elseif를 지원하지 않으므로
+// JSP에서 각 상태를 불린 변수로 미리 계산하여 전달합니다.
+String status = info.s("status");
+p.setVar("isApproved", status.equals("approved"));
+p.setVar("isPending", status.equals("pending"));
+p.setVar("isRejected", status.equals("rejected"));
 ```
 
 **HTML:**
 
 ```html
-{#if status == "approved"}
+<!--@if(isApproved)-->
     <span class="badge bg-success">승인됨</span>
-{#elseif status == "pending"}
+<!--/if(isApproved)-->
+<!--@if(isPending)-->
     <span class="badge bg-warning">대기중</span>
-{#elseif status == "rejected"}
+<!--/if(isPending)-->
+<!--@if(isRejected)-->
     <span class="badge bg-danger">거부됨</span>
-{#else}
-    <span class="badge bg-secondary">알 수 없음</span>
-{#/if}
+<!--/if(isRejected)-->
 ```
 
 ### 반복 내 조건문
 
+```jsp
+// JSP에서 반복 데이터에 불린 플래그를 미리 추가합니다.
+BoardDao board = new BoardDao();
+DataSet list = board.findAll("ORDER BY id DESC");
+while(list.next()) {
+    list.put("isOwner", list.s("user_id").equals(String.valueOf(userId)));
+}
+p.setLoop("list", list);
+```
+
+**HTML:**
+
 ```html
-{#loop list}
-    <tr class="{#if list.user_id == userId}table-primary{#/if}">
-        <td>{list.title}</td>
-        <td>{list.user_name}</td>
+<!--@loop(list)-->
+    <tr>
+        <td>{{list.title}}</td>
+        <td>{{list.user_name}}</td>
         <td>
-            {#if list.user_id == userId}
-                <a href="board_modify.jsp?id={list.id}" class="btn btn-sm btn-primary">수정</a>
-                <a href="board_delete.jsp?id={list.id}" class="btn btn-sm btn-danger">삭제</a>
-            {#/if}
+            <!--@if(list.isOwner)-->
+                <a href="board_modify.jsp?id={{list.id}}" class="btn btn-sm btn-primary">수정</a>
+                <a href="board_delete.jsp?id={{list.id}}" class="btn btn-sm btn-danger">삭제</a>
+            <!--/if(list.isOwner)-->
         </td>
     </tr>
-{#/loop}
+<!--/loop(list)-->
 ```
 
 ## 폼 스크립트 (Form 클래스)
@@ -293,7 +312,7 @@ p.setVar("form_script", f.getScript());
     <button type="submit" class="btn btn-primary">가입하기</button>
 </form>
 
-{form_script}
+{{form_script}}
 ```
 
 **생성되는 스크립트:**
@@ -339,12 +358,12 @@ p.setVar("form_script", f.getScript());
 
 ```html
 <form method="post">
-    <input type="text" name="title" value="{info.title}" class="form-control">
-    <textarea name="content" class="form-control">{info.content}</textarea>
+    <input type="text" name="title" value="{{info.title}}" class="form-control">
+    <textarea name="content" class="form-control">{{info.content}}</textarea>
     <button type="submit" class="btn btn-primary">수정</button>
 </form>
 
-{form_script}
+{{form_script}}
 ```
 
 ## 재사용 가능한 컴포넌트
@@ -366,18 +385,18 @@ p.setLoop("comments", commentList);
 
 ```html
 <div class="container">
-    <h1>{info.title}</h1>
-    <div class="content">{info.content}</div>
+    <h1>{{info.title}}</h1>
+    <div class="content">{{info.content}}</div>
 
     <hr>
 
     <h3>댓글</h3>
-    {#loop comments}
+    <!--@loop(comments)-->
         <div class="comment">
-            <strong>{comments.user_name}</strong>
-            <p>{comments.content}</p>
+            <strong>{{comments.user_name}}</strong>
+            <p>{{comments.content}}</p>
         </div>
-    {#/loop}
+    <!--/loop(comments)-->
 </div>
 ```
 
@@ -386,9 +405,11 @@ p.setLoop("comments", commentList);
 **JSP - init.jsp에 추가:**
 
 ```jsp
-// 현재 경로
+// 현재 경로를 기반으로 각 메뉴의 활성 상태를 불린 변수로 전달
 String currentPath = request.getRequestURI();
 p.setVar("currentPath", currentPath);
+p.setVar("isHomeActive", currentPath.equals("/main/index.jsp"));
+p.setVar("isBoardActive", currentPath.equals("/board/board_list.jsp"));
 ```
 
 **HTML - layout_main.html:**
@@ -399,12 +420,24 @@ p.setVar("currentPath", currentPath);
         <a class="navbar-brand" href="/">My Site</a>
         <ul class="navbar-nav">
             <li class="nav-item">
-                <a class="nav-link {#if currentPath == "/main/index.jsp"}active{#/if}"
+                <!--@if(isHomeActive)-->
+                <a class="nav-link active"
                    href="/main/index.jsp">홈</a>
+                <!--/if(isHomeActive)-->
+                <!--@nif(isHomeActive)-->
+                <a class="nav-link"
+                   href="/main/index.jsp">홈</a>
+                <!--/nif(isHomeActive)-->
             </li>
             <li class="nav-item">
-                <a class="nav-link {#if currentPath == "/board/board_list.jsp"}active{#/if}"
+                <!--@if(isBoardActive)-->
+                <a class="nav-link active"
                    href="/board/board_list.jsp">게시판</a>
+                <!--/if(isBoardActive)-->
+                <!--@nif(isBoardActive)-->
+                <a class="nav-link"
+                   href="/board/board_list.jsp">게시판</a>
+                <!--/nif(isBoardActive)-->
             </li>
         </ul>
     </div>
@@ -429,7 +462,7 @@ p.setVar("pager", lm.getPaging());
 ```html
 <nav>
     <ul class="pagination">
-        {pager}
+        {{pager}}
     </ul>
 </nav>
 ```
@@ -502,9 +535,9 @@ Bootstrap Card 사용.
 - [ ] setVar와 HTML의 변수명이 일치하는가?
 - [ ] setLoop 후 HTML에서 올바른 이름으로 참조하는가?
 - [ ] 날짜 필드를 포맷팅했는가?
-- [ ] 빈 목록에 대한 처리를 했는가? ({#empty})
+- [ ] 빈 목록에 대한 처리를 했는가? (`<!--@nif(list)-->`)
 - [ ] 조건문 닫기 태그를 누락하지 않았는가?
-- [ ] 폼 스크립트를 출력했는가? ({form_script})
+- [ ] 폼 스크립트를 출력했는가? (`{{form_script}}`)
 - [ ] HTML 특수문자가 자동으로 escape되는가? (XSS 방지)
 
 ## 자주 하는 실수
@@ -512,11 +545,11 @@ Bootstrap Card 사용.
 ### 1. next() 호출 누락
 
 ```jsp
-// ❌ 잘못된 코드
+// 잘못된 코드
 DataSet info = user.findById(userId);
 p.setVar("info", info);  // 데이터 없음!
 
-// ✅ 올바른 코드
+// 올바른 코드
 DataSet info = user.findById(userId);
 info.next();  // 첫 행으로 이동
 p.setVar("info", info);
@@ -527,44 +560,46 @@ p.setVar("info", info);
 ```jsp
 // JSP
 p.setLoop("boardList", list);
+```
 
-// HTML - ❌ 틀림
-{#loop list}
-    {list.title}
-{#/loop}
+```html
+<!-- 틀림 -->
+<!--@loop(list)-->
+    {{list.title}}
+<!--/loop(list)-->
 
-// HTML - ✅ 올바름
-{#loop boardList}
-    {boardList.title}
-{#/loop}
+<!-- 올바름 -->
+<!--@loop(boardList)-->
+    {{boardList.title}}
+<!--/loop(boardList)-->
 ```
 
 ### 3. 조건문 닫기 누락
 
 ```html
-<!-- ❌ 잘못된 코드 -->
-{#if isLogin}
+<!-- 잘못된 코드 -->
+<!--@if(isLogin)-->
     <p>로그인됨</p>
-<!-- {#/if} 누락! -->
+<!-- <!--/if(isLogin)--> 누락! -->
 
-<!-- ✅ 올바른 코드 -->
-{#if isLogin}
+<!-- 올바른 코드 -->
+<!--@if(isLogin)-->
     <p>로그인됨</p>
-{#/if}
+<!--/if(isLogin)-->
 ```
 
 ### 4. 반복 내 변수 오류
 
 ```html
-<!-- ❌ 잘못된 코드 -->
-{#loop list}
-    <li>{title}</li>  <!-- list. 누락 -->
-{#/loop}
+<!-- 잘못된 코드 -->
+<!--@loop(list)-->
+    <li>{{title}}</li>  <!-- list. 누락 -->
+<!--/loop(list)-->
 
-<!-- ✅ 올바른 코드 -->
-{#loop list}
-    <li>{list.title}</li>
-{#/loop}
+<!-- 올바른 코드 -->
+<!--@loop(list)-->
+    <li>{{list.title}}</li>
+<!--/loop(list)-->
 ```
 
 ## 관련 문서
