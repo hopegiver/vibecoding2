@@ -44,14 +44,14 @@ OPENAI_API_KEY=sk-xxx
 # 시크릿 등록
 wrangler secret put JWT_SECRET --env production
 
-# JWT 시크릿 생성 예시
+# JWT 시크릿 생성
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
 ### wrangler.toml 환경 분리
 
 ```toml
-name = "myworker"
+name = "workers-template"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
@@ -59,30 +59,34 @@ compatibility_date = "2024-01-01"
 ENVIRONMENT = "development"
 
 [env.dev]
+name = "workers-template-dev"
 vars = { ENVIRONMENT = "development" }
 
 [env.production]
+name = "workers-template-prod"
 vars = { ENVIRONMENT = "production" }
 ```
 
 ### 바인딩 설정 (필요 시)
 
 ```toml
+# KV 네임스페이스
+[[kv_namespaces]]
+binding = "KV"
+id = "your-kv-namespace-id"
+preview_id = "your-preview-kv-namespace-id"
+
 # D1 데이터베이스
 [[d1_databases]]
 binding = "DB"
-database_name = "myworker-db"
-database_id = "xxx"
-
-# KV 네임스페이스
-[[kv_namespaces]]
-binding = "CACHE"
-id = "xxx"
+database_name = "your-database"
+database_id = "your-database-id"
 
 # R2 버킷
 [[r2_buckets]]
-binding = "STORAGE"
-bucket_name = "myworker-storage"
+binding = "BUCKET"
+bucket_name = "your-bucket"
+preview_bucket_name = "your-preview-bucket"
 ```
 
 ## 커스텀 도메인
@@ -142,6 +146,7 @@ jobs:
         with:
           node-version: '18'
       - run: npm install
+      - run: npm run test
       - run: npx wrangler deploy --env production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
