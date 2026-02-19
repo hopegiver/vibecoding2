@@ -8,9 +8,15 @@ Cloudflare Pages 프로젝트의 표준 디렉토리 구조와 파일 조직 방
 
 ```
 myapp/
+├── CLAUDE.md                       # AI 개발 가이드
+├── .claude/                        # Claude Code 설정
+│   ├── rules/                      # 자동 적용 규칙
+│   ├── commands/                   # 슬래시 커맨드
+│   └── templates/                  # 코드 생성 템플릿
+├── docs/                           # 상세 개발 문서
 ├── index.html                      # 엔트리 포인트
-├── favicon.ico                     # 파비콘
-├── robots.txt                      # SEO 설정
+├── css/
+│   └── base.css                    # 커스텀 스타일 (Bootstrap 보완)
 ├── src/
 │   ├── views/                      # HTML 뷰 파일
 │   │   ├── layout/                 # 레이아웃 템플릿
@@ -29,17 +35,10 @@ myapp/
 │   │   └── blog/
 │   │       ├── list.js
 │   │       └── detail.js
-│   └── components/                 # 재사용 컴포넌트 (선택)
-├── css/
-│   └── base.css                    # 커스텀 스타일 (Bootstrap 보완)
+│   └── components/                 # 재사용 컴포넌트
+├── i18n/                           # 다국어 파일 (선택)
 ├── assets/
 │   └── images/
-│       ├── logo.svg
-│       └── hero.jpg
-├── functions/                      # Cloudflare Pages Functions
-│   └── api/
-│       ├── contact.js
-│       └── newsletter.js
 └── .gitignore
 ```
 
@@ -105,26 +104,23 @@ css/
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My App</title>
-
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- 커스텀 스타일 -->
-    <link rel="stylesheet" href="/css/base.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/base.css">
 </head>
 <body>
     <div id="app"></div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Vue 3 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
     <!-- ViewLogic Router -->
-    <script src="https://cdn.jsdelivr.net/npm/viewlogic@latest/dist/viewlogic-router.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/viewlogic@1.4.0/dist/viewlogic-router.min.js"></script>
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         const router = new ViewLogicRouter({
-            basePath: '/',
-            srcPath: '/src',
-            mode: 'hash'
+            environment: 'development'
         });
     </script>
 </body>

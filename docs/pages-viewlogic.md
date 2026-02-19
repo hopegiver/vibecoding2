@@ -14,73 +14,14 @@ ViewLogic Router를 활용한 SPA 개발 방법을 학습합니다.
 - 내장 API 클라이언트 (`this.$api`)
 - 인증, 다국어, 캐싱 지원
 
-## 설치 및 설정
+**내장 메서드:**
+- 라우팅: `navigateTo()`, `getCurrentRoute()`, `getParam()`, `getParams()`
+- 인증: `isAuth()`, `getToken()`, `setToken()`, `logout()`
+- 데이터: `fetchData()`, `this.$api`, `this.$state`
+- 다국어: `this.$t()`, `this.$lang`, `this.$i18n.setLanguage()`
+- 디버그: `this.log()`
 
-### index.html
-
-```html
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My App</title>
-
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- 커스텀 스타일 -->
-    <link rel="stylesheet" href="/css/base.css">
-</head>
-<body>
-    <div id="app"></div>
-
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Vue 3 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- ViewLogic Router -->
-    <script src="https://cdn.jsdelivr.net/npm/viewlogic@latest/dist/viewlogic-router.min.js"></script>
-    <script>
-        const router = new ViewLogicRouter({
-            basePath: '/',
-            srcPath: '/src',
-            mode: 'hash'
-        });
-    </script>
-</body>
-</html>
-```
-
-### 설정 옵션
-
-```javascript
-const router = new ViewLogicRouter({
-    // 기본
-    basePath: '/',
-    srcPath: '/src',
-    mode: 'hash',               // 'hash' 또는 'history'
-
-    // 레이아웃
-    useLayout: true,
-    defaultLayout: 'default',
-
-    // 캐싱
-    cacheMode: 'memory',        // 'memory', 'sessionStorage', 'localStorage', 'none'
-    cacheTTL: 300000,           // 5분
-
-    // 인증
-    authEnabled: false,
-    loginRoute: 'login',
-    protectedRoutes: [],
-
-    // 다국어
-    useI18n: false,
-    defaultLanguage: 'ko',
-
-    // 로깅
-    logLevel: 'info'            // 'debug', 'info', 'warn', 'error'
-});
-```
+> 전체 설정 옵션은 viewlogic-template의 `docs/configuration.md` 참고.
 
 ## 라우팅
 
@@ -655,6 +596,25 @@ ViewLogic 개발 시 확인사항:
 - [ ] 로직에서 `layout: 'default'` 를 지정했는가?
 - [ ] `this.$api`로 API를 호출하는가?
 - [ ] Bootstrap 클래스를 최대한 활용하고 있는가?
+
+## 상세 문서
+
+viewlogic-template의 `docs/` 폴더에 기능별 상세 문서가 포함되어 있습니다:
+
+| 문서 | 내용 |
+|------|------|
+| routing.md | 파일 기반 라우팅, 페이지 이동, 파라미터 |
+| data-fetching.md | dataURL 자동 로딩, 수동 API 호출 |
+| forms.md | 명령형/선언적 폼 처리 |
+| api.md | $api 메서드 (GET/POST/PUT/DELETE) |
+| auth.md | 인증 설정, 로그인/로그아웃, 토큰 관리 |
+| i18n.md | 다국어 설정, 언어 전환 |
+| components.md | 컴포넌트 생성/등록 |
+| components-builtin.md | 내장 컴포넌트 (Table, Sidebar 등) |
+| layout.md | 레이아웃 시스템 |
+| patterns.md | 공통 패턴 (로딩, 에러, 밸리데이션) |
+| advanced.md | 라이프사이클, computed, watch, 캐싱 |
+| configuration.md | ViewLogicRouter 전체 설정 옵션 |
 
 ## 관련 문서
 

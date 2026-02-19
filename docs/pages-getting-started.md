@@ -26,10 +26,32 @@ git init
 
 ```
 myapp/
+├── CLAUDE.md                      # AI 개발 가이드 (핵심 규칙)
 ├── .claude/
-│   └── rules/
-│       ├── viewlogic-guide.md     # ViewLogic 개발 규칙
-│       └── style-guide.md         # CSS 스타일 규칙
+│   ├── rules/                     # 자동 적용 규칙
+│   │   ├── viewlogic-guide.md     # ViewLogic 개발 규칙
+│   │   └── style-guide.md         # CSS 스타일 규칙
+│   ├── commands/                  # 슬래시 커맨드
+│   │   ├── create-page.md         # /create-page
+│   │   ├── create-component.md    # /create-component
+│   │   └── create-layout.md       # /create-layout
+│   └── templates/                 # 코드 생성 템플릿
+│       ├── page.md                # 페이지 (정적/목록/상세/폼)
+│       ├── component.md           # 컴포넌트 (기본/슬롯/v-model)
+│       └── layout.md              # 레이아웃 (네비/사이드바)
+├── docs/                          # 상세 개발 문서
+│   ├── routing.md                 # 라우팅, 페이지 이동
+│   ├── data-fetching.md           # dataURL, API 호출
+│   ├── forms.md                   # 폼 처리
+│   ├── api.md                     # $api 메서드
+│   ├── auth.md                    # 인증
+│   ├── i18n.md                    # 다국어
+│   ├── components.md              # 컴포넌트 생성/등록
+│   ├── components-builtin.md      # 내장 컴포넌트
+│   ├── layout.md                  # 레이아웃 시스템
+│   ├── patterns.md                # 공통 패턴
+│   ├── advanced.md                # 고급 기능
+│   └── configuration.md           # 설정 옵션
 ├── index.html                     # 엔트리 포인트
 ├── css/
 │   └── base.css                   # 커스텀 스타일 (Bootstrap 보완)
@@ -50,24 +72,57 @@ myapp/
 │   │   ├── contact.js
 │   │   ├── 404.js
 │   │   └── error.js
-├── GUIDE.md                       # ViewLogic 상세 매뉴얼
+│   └── components/                # 재사용 컴포넌트
+│       ├── Table.js
+│       ├── Sidebar.js
+│       ├── Loading.js
+│       ├── FileUpload.js
+│       ├── DatePicker.js
+│       ├── HtmlInclude.js
+│       └── DynamicInclude.js
 └── README.md
 ```
 
-### .claude/rules 설명
+### CLAUDE.md
 
-템플릿에는 Claude Code가 자동으로 참조하는 규칙 파일이 포함되어 있습니다:
+Claude Code가 자동으로 참조하는 프로젝트 가이드입니다:
+- 프로젝트 구조 및 기술 스택
+- 핵심 규칙 6가지 (파일 쌍, 폴더=라우트, CSS 금지, navigateTo 등)
+- 슬래시 커맨드 (`/create-page`, `/create-component`, `/create-layout`)
+- 템플릿 및 상세 문서 안내
 
-**viewlogic-guide.md** - ViewLogic 개발 핵심 규칙:
-- 파일 구조 (views/logic 분리, 파일명 = 라우트)
-- 기본 코드 패턴 (export default, data, mounted, methods)
-- navigateTo, getParam, $api 사용법
-- 금지 사항 (HTML에 style 태그, window.location 직접 조작 등)
+### .claude/ 폴더
 
-**style-guide.md** - CSS 스타일 핵심 규칙:
-- Bootstrap 5 최대 활용, Custom CSS 최소화
-- CSS 변수 사용 규칙
-- 반응형 디자인 기준
+**rules/** - 자동 적용 규칙:
+- `viewlogic-guide.md`: 파일 구조, 필수 패턴, 내장 메서드, 금지 사항, 참조 트리거
+- `style-guide.md`: Bootstrap 5 최대 활용, CSS 변수 사용, 반응형 규칙
+
+**commands/** - 슬래시 커맨드:
+- `/create-page` - 페이지(view + logic) 생성
+- `/create-component` - 재사용 컴포넌트 생성
+- `/create-layout` - 레이아웃 생성
+
+**templates/** - 코드 생성 시 참조하는 표준 템플릿:
+- `page.md`: 4가지 변형 (정적, 목록, 상세, 폼)
+- `component.md`: 3가지 변형 (기본, 슬롯, v-model)
+- `layout.md`: 2가지 변형 (네비게이션, 사이드바)
+
+### docs/ (상세 개발 문서)
+
+| 문서 | 내용 |
+|------|------|
+| routing.md | 파일 기반 라우팅, 페이지 이동, 파라미터 |
+| data-fetching.md | dataURL 자동 로딩, 수동 API 호출 |
+| forms.md | 명령형/선언적 폼 처리 |
+| api.md | $api 메서드 (GET/POST/PUT/DELETE) |
+| auth.md | 인증 설정, 로그인/로그아웃, 토큰 관리 |
+| i18n.md | 다국어 설정, 언어 전환 |
+| components.md | 컴포넌트 생성/등록 |
+| components-builtin.md | 내장 컴포넌트 (Table, Sidebar 등) |
+| layout.md | 레이아웃 시스템 |
+| patterns.md | 공통 패턴 (로딩, 에러, 밸리데이션) |
+| advanced.md | 라이프사이클, computed, watch, 캐싱 |
+| configuration.md | ViewLogicRouter 전체 설정 옵션 |
 
 ## 2. index.html
 
@@ -96,9 +151,7 @@ myapp/
 
     <script>
         const router = new ViewLogicRouter({
-            basePath: '/',
-            srcPath: '/src',
-            mode: 'hash'
+            environment: 'development'
         });
     </script>
 </body>
@@ -110,6 +163,7 @@ myapp/
 - Bootstrap 5.3.3: 레이아웃/UI 스타일
 - Vue 3 (prod): 데이터 바인딩, 이벤트 처리
 - ViewLogic 1.4.0: 파일 기반 SPA 라우팅
+- `environment: 'development'`: 개발 모드 (디버그 로깅)
 
 ## 3. 페이지 개발
 
@@ -165,7 +219,7 @@ git push -u origin main
 
 템플릿에 포함된 home, about, contact 페이지를 프로젝트 내용으로 변경.
 
-### .claude/rules 커스터마이즈
+### .claude/ 커스터마이즈
 
 프로젝트에 맞는 규칙 추가:
 
@@ -181,7 +235,7 @@ git push -u origin main
 프로젝트 시작 시 확인사항:
 
 - [ ] viewlogic-template 클론 완료
-- [ ] .claude/rules 확인 (viewlogic-guide.md, style-guide.md)
+- [ ] CLAUDE.md 및 .claude/ 확인
 - [ ] index.html 타이틀 변경
 - [ ] layout/default.html 네비게이션 수정
 - [ ] 첫 페이지 작동 확인 (로컬 서버)
