@@ -1,7 +1,7 @@
 ### 기초
 - [빠른 시작](docs/quick-start.md)
 - [개발 환경 설정](docs/setup.md)
-- [첫 프로젝트 만들기](docs/first-project.md)
+- [핵심원칙](docs/core-principles.md)
 
 ### 설정
 - [CLAUDE.md 작성](docs/claude-md.md)
