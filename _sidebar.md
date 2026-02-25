@@ -1,6 +1,4 @@
 ### 기초
-- [빠른 시작](docs/quick-start.md)
-- [개발 환경 설정](docs/setup.md)
 - [핵심원칙](docs/core-principles.md)
 
 ### 설정
