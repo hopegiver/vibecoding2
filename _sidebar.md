@@ -1,5 +1,6 @@
 ### 기초
 - [핵심원칙](docs/core-principles.md)
+- [개발 프로세스](docs/dev-process.md)
 
 ### 설정
 - [CLAUDE.md 작성](docs/claude-md.md)
