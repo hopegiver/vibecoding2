@@ -6,9 +6,10 @@
 ### 설정
 - [CLAUDE.md 작성](docs/claude-md.md)
 - [.claude/rules 작성](docs/claude-rules.md)
-- [.claude/memory 활용](docs/claude-memory.md)
-- [.claude/commands 활용](docs/claude-commands.md)
+- [.claude/hooks 활용](docs/claude-hooks.md)
+- [.claude/skills 활용](docs/claude-skills.md)
 - [.claude/templates 활용](docs/claude-templates.md)
+- [.claude/memory 활용](docs/claude-memory.md)
 - [MCP 서버 설정](docs/mcp-setup.md)
 - [프로젝트 구조 표준](docs/project-structure.md)
 
