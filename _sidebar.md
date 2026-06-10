@@ -1,6 +1,7 @@
 ### 핵심 가이드
 - [핵심원칙](docs/core-principles.md)
 - [개발 프로세스](docs/dev-process.md)
+- [멀티 에이전트 활용](docs/multi-agent.md)
 - [인프라 및 배포](docs/infrastructure.md)
 
 ### 설정
