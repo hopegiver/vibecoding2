@@ -20,13 +20,6 @@
 - [프로젝트 구조](docs/workers-structure.md)
 - [배포](docs/workers-deployment.md)
 
-### ViewLogic
-- [시작하기](docs/pages-getting-started.md)
-- [프로젝트 구조](docs/pages-structure.md)
-- [ViewLogic 사용법](docs/pages-viewlogic.md)
-- [환경 변수](docs/pages-environment.md)
-- [배포](docs/pages-deployment.md)
-
 ---
 
 [← 메인으로 돌아가기](README.md)

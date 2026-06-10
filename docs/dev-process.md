@@ -364,7 +364,6 @@ schema.sql로 저장하고, wrangler.toml에 D1 바인딩도 추가해줘."
 ## 다음 단계
 
 - [핵심원칙](core-principles.md) - 바이브코딩 핵심 원칙
-- [ViewLogic 시작하기](pages-getting-started.md) - 프론트엔드 프로젝트 생성
 - [Vue Zero 시작하기](workers-getting-started.md) - 풀스택 프로젝트 생성
 
 ---

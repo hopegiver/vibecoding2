@@ -382,7 +382,6 @@ Cloudflare가 적합하지 않은 경우도 있습니다:
 ## 관련 문서
 
 - [개발 프로세스](dev-process.md) - 바이브코딩 개발 프로세스
-- [ViewLogic 시작하기](pages-getting-started.md) - 프론트엔드 프로젝트 생성
 - [Vue Zero 시작하기](workers-getting-started.md) - 풀스택 프로젝트 생성
 - [Vue Zero 배포](workers-deployment.md) - Workers 배포 상세
 

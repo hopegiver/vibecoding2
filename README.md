@@ -132,9 +132,8 @@ Claude Code를 열고 물어보세요:
 ```
 
 ### 2. 첫 프로젝트 만들기
-- [맑은프레임워크](docs/malgn-getting-started.md) - JSP 기반 웹 개발
-- [Cloudflare Pages](docs/pages-getting-started.md) - 정적 사이트/SPA
-- [Cloudflare Workers](docs/workers-getting-started.md) - 서버리스 API
+- [맑은프레임워크](docs/malgn-getting-started.md) - JSP 기반 웹 개발 (레거시 유지보수)
+- [Vue Zero](docs/workers-getting-started.md) - 풀스택 웹 애플리케이션
 
 ## 문서 구조
 
