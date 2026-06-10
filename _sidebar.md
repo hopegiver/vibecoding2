@@ -11,14 +11,14 @@
 - [.claude/templates 활용](docs/claude-templates.md)
 - [MCP 서버 설정](docs/mcp-setup.md)
 
-### 맑은프레임워크
-- [시작하기](docs/malgn-getting-started.md)
-- [.claude 설정](docs/malgn-claude-setup.md)
-
 ### Vue Zero
 - [시작하기](docs/workers-getting-started.md)
 - [프로젝트 구조](docs/workers-structure.md)
 - [배포](docs/workers-deployment.md)
+
+### 맑은프레임워크
+- [시작하기](docs/malgn-getting-started.md)
+- [.claude 설정](docs/malgn-claude-setup.md)
 
 ---
 
