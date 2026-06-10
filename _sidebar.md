@@ -18,7 +18,7 @@
 ### Vue Zero
 - [시작하기](docs/workers-getting-started.md)
 - [프로젝트 구조](docs/workers-structure.md)
-- [배포](workers-deployment.md)
+- [배포](docs/workers-deployment.md)
 
 ### ViewLogic
 - [시작하기](docs/pages-getting-started.md)
