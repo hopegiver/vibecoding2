@@ -1,237 +1,153 @@
 # .claude/templates 활용법
 
-## 개요
+## 템플릿이란?
 
-`.claude/templates` 폴더는 자주 사용하는 코드 패턴을 **재사용 가능한 템플릿**으로 저장하는 곳입니다. 신규 페이지나 기능을 추가할 때 Claude Code가 이 템플릿을 참고하여 일관된 코드를 생성합니다.
+`.claude/templates/` 폴더에 코드 패턴을 마크다운으로 저장하면, AI가 새 기능을 만들 때 이 패턴을 참고하여 일관된 코드를 생성합니다.
 
-## 왜 필요한가?
+## 언제 템플릿이 필요한가?
 
-프로젝트에서 반복적으로 작성하는 코드 패턴이 있습니다:
-- CRUD 페이지 (목록, 등록, 수정, 상세)
-- API 엔드포인트
-- 인증이 필요한 페이지
-- 폼 유효성 검증
+AI는 기존 코드를 읽고 같은 패턴으로 생성하는 능력이 뛰어납니다. 따라서 **기존 코드가 충분하면 템플릿은 불필요**합니다. 템플릿이 진짜 가치 있는 경우는 따로 있습니다.
+
+### 템플릿이 필요한 경우
+
+| 상황 | 이유 |
+|------|------|
+| **프로젝트 초기** | 참고할 기존 코드가 아직 없어서 AI가 패턴을 추론할 수 없음 |
+| **AI가 추론하기 어려운 복잡한 구조** | 맑은프레임워크의 JSP/HTML 분리처럼 일반적이지 않은 패턴 |
+| **회사 고유 코드 규칙** | 일반적인 프레임워크 사용법과 다른 사내 컨벤션 |
+
+### 템플릿이 불필요한 경우
+
+| 상황 | 대안 |
+|------|------|
+| 이미 같은 패턴의 코드가 프로젝트에 있음 | AI가 기존 코드를 읽고 따라함 |
+| 표준적인 CRUD, API, 폼 | 자연어 요청으로 충분 |
+| 코딩 규칙 강제 | rules + hooks가 더 적합 |
+
+**판단 기준:** "이미 프로젝트에 비슷한 코드가 2개 이상 있는가?" → Yes면 템플릿 불필요. AI가 기존 코드를 참고합니다.
+
+## 작성 원칙
+
+### 실제 동작하는 코드로 작성
+
+템플릿은 설명이 아니라 **복사해서 바로 쓸 수 있는 코드**여야 합니다.
+
+✅ **좋은 템플릿:**
+```markdown
+# 맑은프레임워크 목록 페이지
+
+## JSP 파일: /WEB-INF/jsp/{{entity}}/list.jsp
+\```jsp
+<%@ page contentType="text/html; charset=UTF-8" %>
+<%
+Page p = new Page(request, response);
+p.setLayout("layout/default");
+p.setBody("{{entity}}/list");
+
+Dao dao = new Dao("{{table}}");
+dao.setS("SELECT * FROM {{table}} ORDER BY reg_date DESC");
+if (dao.selectList()) {
+    p.setLoop("list", dao);
+}
+p.display();
+%>
+\```
+
+## HTML 파일: /html/{{entity}}/list.html
+\```html
+<div class="container">
+  <h2>{{Entity}} 목록</h2>
+  <table class="table">
+    <!-- {loop:list} -->
+    <tr><td>{=name}</td><td>{=reg_date}</td></tr>
+    <!-- {/loop:list} -->
+  </table>
+</div>
+\```
+```
+
+❌ **나쁜 템플릿:**
+```markdown
+# 목록 페이지
+- JSP에 로직을 작성합니다
+- HTML에 템플릿을 작성합니다
+- Page 객체로 연결합니다
+```
+
+→ 설명만 있고 코드가 없으면 AI가 참고할 수 없습니다.
+
+### 핵심만 포함
+
+템플릿에 모든 경우의 수를 넣으면 오히려 혼란을 줍니다. **가장 기본적인 패턴 하나**를 깔끔하게 보여주세요.
+
+✅ 기본 목록 페이지 1개 → AI가 이를 기반으로 변형
+❌ 검색 있는 목록, 페이징 있는 목록, 필터 있는 목록 전부 → 너무 많아서 핵심이 묻힘
+
+### 보안 요소는 기본 포함
+
+템플릿에 보안 패턴을 넣어두면 AI가 자연스럽게 따라합니다:
+
+- 입력 검증
+- XSS 방지 (맑은프레임워크: `m.rs()`, `m.ri()`)
+- SQL Injection 방지 (바인드 변수)
 - 권한 체크
 
-이런 패턴을 템플릿으로 만들면:
-- ✅ 일관된 코드 구조 유지
-- ✅ 개발 시간 단축
-- ✅ 실수 방지
-- ✅ 베스트 프랙티스 공유
+## 플레이스홀더
 
-## 템플릿 작성 원칙
+변경이 필요한 부분은 `{{이름}}` 형식으로 표시합니다:
 
-### 기본 구조
+| 플레이스홀더 | 의미 | 예시 |
+|-------------|------|------|
+| `{{entity}}` | 리소스명 (소문자) | user, product |
+| `{{Entity}}` | 리소스명 (대문자 시작) | User, Product |
+| `{{table}}` | 테이블명 | tb_user, products |
 
-템플릿 파일은 **Markdown 형식**으로 작성하며 다음 구조를 권장합니다:
+간단하게 3개면 충분합니다. AI가 맥락에 맞게 알아서 치환합니다.
 
-```markdown
-# 템플릿 제목
+## 템플릿 구성 예시
+
+프로젝트당 2~4개면 충분합니다. 프로젝트에 기존 코드가 쌓이면 점차 불필요해집니다.
+
+### 맑은프레임워크
+
+```
+.claude/templates/
+├── malgn-list.md       # 목록 페이지 (JSP + HTML)
+└── malgn-form.md       # 등록/수정 페이지 (JSP + HTML)
+```
+
+→ AI가 맑은프레임워크의 JSP/HTML 분리 패턴을 처음 접할 때 필수
+
+### Vue Zero
+
+```
+.claude/templates/
+└── vue-zero-page.md    # 페이지 + API + DAO 세트
+```
+
+→ 프로젝트 초기에만 필요. 기존 페이지가 2~3개 쌓이면 제거해도 됨
 
 ## 사용 방법
-- 이 템플릿의 목적과 사용 시기
-- 플레이스홀더 설명
 
-## 파일 1: 경로/파일명
-\`\`\`언어
-실제 코드 내용
-\`\`\`
+AI에게 템플릿을 참조하라고 명시합니다:
 
-## 파일 2: 경로/파일명
-\`\`\`언어
-실제 코드 내용
-\`\`\`
+```
+".claude/templates/malgn-list.md를 참고해서 상품 목록 페이지를 만들어줘."
 ```
 
-### 포함할 내용
+프로젝트에 기존 코드가 충분해지면:
 
-각 템플릿은 다음 요소를 포함해야 합니다:
-
-**1. 명확한 설명**
-- 템플릿의 목적
-- 언제 사용하는지
-- 플레이스홀더 설명
-
-**2. 완전한 코드**
-- 실제 작동하는 코드
-- 필수 import/include
-- 기본 에러 처리
-
-**3. 필수 보안 요소**
-- 입력 검증
-- XSS 방지
-- SQL Injection 방지
-- 권한 체크
-
-**4. 주석**
-- 핵심 로직 설명
-- 플레이스홀더 위치 표시
-
-## 플레이스홀더 규칙
-
-템플릿에서 변경 가능한 부분은 `{{플레이스홀더}}` 형식으로 표시합니다.
-
-### 네이밍 컨벤션
-
-**엔티티/리소스명:**
-- `{{entity}}`: camelCase (예: userProfile, productItem)
-- `{{Entity}}`: PascalCase (예: UserProfile, ProductItem)
-- `{{ENTITY}}`: UPPER_CASE (예: USER_PROFILE, PRODUCT_ITEM)
-
-**데이터베이스:**
-- `{{table}}`: snake_case (예: tb_user, tb_product)
-- `{{fields}}`: 필드 목록 (예: name,email,phone)
-
-**경로/폴더:**
-- `{{folder}}`: 폴더명 (예: user, product, admin)
-- `{{path}}`: 전체 경로 (예: /admin/user)
-
-### 사용 예시
-
-```javascript
-// {{Entity}}: PascalCase 엔티티명 (예: User, Product)
-export class {{Entity}}Service {
-  constructor(env) {
-    this.env = env;
-    this.table = '{{table}}'; // 테이블명 (예: users, products)
-  }
-}
+```
+"기존 사용자 목록 페이지와 같은 패턴으로 상품 목록 페이지를 만들어줘."
 ```
 
-## 템플릿 유형별 구성
+→ 이 시점이 오면 템플릿은 역할을 다한 것입니다.
 
-### CRUD 템플릿
+## 관련 문서
 
-**포함할 파일:**
-- 목록 페이지 (list)
-- 등록 페이지 (insert/create)
-- 수정 페이지 (update)
-- 상세 페이지 (view/detail)
-- DAO/Service 클래스
-
-**필수 기능:**
-- 페이징
-- 검색
-- 정렬
-- 유효성 검증
-- 에러 처리
-
-### API 템플릿
-
-**포함할 파일:**
-- Service 클래스
-- Route 핸들러
-- 에러 핸들러
-- 응답 포맷터
-
-**필수 기능:**
-- RESTful 엔드포인트 (GET, POST, PUT, DELETE)
-- 인증/권한 체크
-- 입력 검증
-- 캐싱 (선택)
-
-### 페이지 템플릿
-
-**포함할 파일:**
-- Logic/Controller
-- View/Template
-- CSS (선택)
-
-**필수 기능:**
-- 레이아웃 설정
-- 데이터 바인딩
-- 이벤트 핸들러
-
-**맑은프레임워크 예시:**
-```
-.claude/templates/
-├── malgn-crud-list.md      # 목록 페이지
-├── malgn-crud-insert.md    # 등록 페이지
-├── malgn-crud-update.md    # 수정 페이지
-└── malgn-dao.md            # DAO 클래스
-```
-
-**Cloudflare Workers 예시:**
-```
-.claude/templates/
-├── workers-api-service.md  # Service 클래스
-├── workers-api-route.md    # Route 핸들러
-└── workers-middleware.md   # 미들웨어
-```
-
-**Cloudflare Pages 예시:**
-```
-.claude/templates/
-├── pages-viewlogic.md      # ViewLogic 페이지
-├── pages-component.md      # 재사용 컴포넌트
-└── pages-api-call.md       # API 호출 패턴
-```
-
-## Claude Code 활용 방법
-
-### 템플릿 참조 프롬프트
-
-**기본 패턴:**
-```
-프롬프트: ".claude/templates/{템플릿명}.md를 참고해서 {기능}을 만들어줘."
-```
-
-**구체적 예시:**
-```
-프롬프트: ".claude/templates/workers-api-service.md를 참고해서
-Product API를 만들어줘. 테이블은 products이고 KV 캐시를 사용해줘."
-```
-
-**Claude Code 동작:**
-1. 템플릿 파일 읽기
-2. 플레이스홀더 치환
-3. 프로젝트 구조에 맞게 파일 생성
-
-### 템플릿 활용 효과
-
-**템플릿 없이:**
-- 매번 구조 설명 필요
-- 일관성 유지 어려움
-- 필수 요소 누락 가능
-
-**템플릿 사용:**
-- 즉시 코드 생성 가능
-- 검증된 패턴 적용
-- 팀 전체 일관성 유지
-
-## 템플릿 관리 팁
-
-### 1. 실제 운영 코드 기반
-- 검증된 코드를 템플릿화
-- 프로덕션 환경에서 작동하는 코드 사용
-
-### 2. 명확한 설명과 주석
-- 각 플레이스홀더 설명 추가
-- 핵심 로직에 주석 포함
-
-### 3. 일관된 네이밍
-- 팀 내 플레이스홀더 규칙 통일
-- 문서화하여 공유
-
-### 4. 필수 요소 포함
-- 유효성 검증
-- 에러 처리
-- 권한 체크
-- 보안 패턴
-
-### 5. 정기적 업데이트
-- 베스트 프랙티스 변경 시 반영
-- 팀 피드백 반영
-
-### 6. Git 버전 관리
-- 템플릿을 Git에 커밋
-- 팀 전체가 최신 템플릿 사용
-
-## 다음 단계
-
-- [.claude/rules 작성 가이드](claude-rules.md)
-- [CLAUDE.md 작성 가이드](claude-md.md)
-- [MCP 서버 설정 및 활용](mcp-setup.md)
+- [CLAUDE.md 작성](claude-md.md) — 프로젝트 맥락 정보
+- [.claude/rules 작성](claude-rules.md) — 코딩 규칙 가이드라인
+- [.claude/hooks 활용](claude-hooks.md) — 자동 검증
 
 ---
 

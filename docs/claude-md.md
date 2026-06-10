@@ -242,21 +242,15 @@ src/
 - ✅ `@submit.prevent` 폼 제출
 - ✅ 모든 경로는 hash 모드 (`#/...`)
 
-## 파일 찾기 팁
+## 주요 경로
 
-\`\`\`bash
-# 목표 관련
-src/views/goals/           # 목표 화면
-src/logic/goals/           # 목표 로직
+AI가 참조하는 핵심 경로입니다:
 
-# 팀 관리
-src/views/team/            # 팀 관리 화면
-src/logic/team/            # 팀 관리 로직
-
-# 레이아웃
-src/views/layout/default.html    # 메인 레이아웃
-src/logic/layout/default.js      # 레이아웃 로직
-\`\`\`
+- `src/views/goals/` — 목표 화면
+- `src/logic/goals/` — 목표 로직
+- `src/views/team/` — 팀 관리 화면
+- `src/logic/team/` — 팀 관리 로직
+- `src/views/layout/default.html` — 메인 레이아웃
 
 ---
 **마지막 업데이트:** 2024-01-19

@@ -122,13 +122,7 @@ MCP 도구(get_context, get_pattern, get_class, validate_code 등)로 조회할 
 
 ## 연결 확인
 
-Claude Code에서 다음을 입력하여 MCP 연결을 테스트합니다:
-
-```
-mcp 연결 테스트
-```
-
-7개 도구(get_context, validate_code, get_class, get_rules, get_pattern, get_doc, search_docs)가 모두 정상이면 준비 완료입니다.
+설정이 완료되면 AI가 자동으로 MCP 도구(get_context, validate_code, get_class, get_rules, get_pattern, get_doc, search_docs)에 접근할 수 있습니다. AI에게 "맑은프레임워크에서 Page 클래스 사용법 알려줘"라고 요청해보면 MCP가 정상 동작하는지 확인할 수 있습니다.
 
 ## 문제 해결
 

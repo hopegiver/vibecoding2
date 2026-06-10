@@ -1,6 +1,35 @@
-# Cloudflare Workers - 프로젝트 시작하기
+# Vue Zero - 시작하기
 
-Cloudflare Workers + Hono 프레임워크 기반 API 프로젝트를 시작하는 방법을 안내합니다.
+Vue Zero + Cloudflare Workers 기반 풀스택 웹 애플리케이션을 시작하는 방법을 안내합니다.
+
+## 왜 Vue Zero인가?
+
+일반적인 프론트엔드 프레임워크(React, Next.js, Nuxt 등)로 바이브코딩을 하면 다음과 같은 문제가 생깁니다:
+
+- **빌드 에러의 늪**: AI가 코드를 생성해도 Webpack/Vite 빌드에서 실패하면 사용자가 직접 해결해야 합니다
+- **설정 지옥**: `tsconfig.json`, `vite.config.ts`, `.eslintrc` 등 설정 파일 간 충돌을 AI가 완벽히 해결하기 어렵습니다
+- **프레임워크 마법**: `<script setup>`, auto-import, 컴파일러 매크로 등 프레임워크 고유 문법은 AI가 실수할 가능성이 높습니다
+
+Vue Zero는 이런 문제를 원천적으로 제거한 **AI 바이브코딩 전용 프레임워크**입니다.
+
+### AI 바이브코딩에 최적화된 이유
+
+| 기존 프레임워크 | Vue Zero |
+|----------------|----------|
+| 빌드 필수 (Webpack/Vite) | **빌드 없음** — CDN에서 브라우저로 직접 실행 |
+| 빌드 에러 시 사용자가 해결 | **빌드가 없으니 빌드 에러도 없음** |
+| TypeScript, JSX 등 다양한 문법 | **Options API 하나만 사용** — AI 생성 코드의 일관성 보장 |
+| 복잡한 설정 파일 다수 | **설정 파일 최소화** — `wrangler.toml` 하나로 충분 |
+| 프레임워크 고유 문법 학습 필요 | **표준 Vue 3 문법만 사용** — 모든 AI가 이미 알고 있는 지식 |
+| 프론트/백엔드 별도 구성 | **풀스택 일체형** — 하나의 프로젝트에서 화면과 API 모두 처리 |
+
+### 핵심 특징
+
+- **빌드 불필요**: CDN을 통해 브라우저에서 바로 실행. AI가 파일을 저장하면 즉시 결과 확인
+- **파일 기반 라우팅**: `.vue` 파일을 만들면 자동으로 URL 경로 생성. 설정 파일 수정 불필요
+- **자동 등록**: Hook이 페이지, 컴포넌트, API 라우트를 자동으로 등록. AI가 파일만 만들면 끝
+- **풀스택 일체형**: Cloudflare Workers (Hono) 백엔드와 한 프로젝트에서 통합
+- **디자인 시스템 내장**: Bootstrap 5 + 디자인 토큰이 포함되어 AI가 바로 예쁜 UI 생성 가능
 
 ## 전제조건
 
@@ -8,14 +37,11 @@ Cloudflare Workers + Hono 프레임워크 기반 API 프로젝트를 시작하�
 - Cloudflare 계정
 - VSCode + Claude Code
 
-## 1. workers-template으로 시작하기
-
-### 템플릿 클론
+## 1단계: 템플릿 클론
 
 ```bash
-# workers-template 클론
-git clone https://github.com/hopegiver/workers-template myworker
-cd myworker
+git clone https://github.com/hopegiver/vue-zero-template my-app
+cd my-app
 
 # 기존 git 히스토리 제거 후 새로 초기화
 rm -rf .git
@@ -25,232 +51,97 @@ git init
 npm install
 ```
 
-### 템플릿 기본 구조
+## 2단계: 로컬 서버 실행
 
-```
-myworker/
-├── CLAUDE.md                      # AI 개발 가이드 (핵심 규칙)
-├── .claude/
-│   ├── rules/
-│   │   └── architecture.md        # 아키텍처 규칙 (자동 적용)
-│   ├── commands/                  # 슬래시 커맨드
-│   │   ├── endpoint.md            # /endpoint - 엔드포인트 추가
-│   │   ├── service.md             # /service - 서비스 생성
-│   │   ├── review.md              # /review - 코드 리뷰
-│   │   └── test.md                # /test - 테스트 작성
-│   └── templates/                 # 코드 생성 템플릿
-│       ├── route.md               # 라우트 CRUD 템플릿
-│       ├── service.md             # 서비스 클래스 템플릿
-│       └── test.md                # 테스트 템플릿
-├── docs/                          # 세부 개발 가이드
-│   ├── project-structure.md
-│   ├── coding-conventions.md
-│   ├── architecture.md
-│   ├── cloudflare-bindings.md
-│   ├── authentication.md
-│   ├── environment.md
-│   ├── error-handling.md
-│   └── adding-features.md
-├── src/
-│   ├── index.js                   # 앱 초기화 (미들웨어, 라우트 등록)
-│   ├── openapi.js                 # OpenAPI 3.0 스펙
-│   ├── routes/                    # HTTP 라우트 핸들러
-│   │   ├── auth.js                # 인증 (로그인)
-│   │   └── users.js               # 사용자 관리
-│   ├── services/                  # 비즈니스 로직 (클래스)
-│   │   ├── authService.js         # 인증 서비스
-│   │   ├── userService.js         # 사용자 서비스
-│   │   └── openaiService.js       # OpenAI 연동
-│   ├── middleware/                 # 미들웨어
-│   │   ├── auth.js                # JWT 인증
-│   │   └── errorHandler.js        # 에러 처리
-│   └── utils/
-│       └── utils.js               # 유틸리티 함수
-├── test/                          # 테스트
-│   ├── routes/
-│   │   └── auth.test.js
-│   ├── services/
-│   │   └── authService.test.js
-│   └── utils/
-│       └── utils.test.js
-├── wrangler.toml                  # Workers 설정
-├── package.json
-├── vitest.config.js               # 테스트 설정
-├── schema.sql                     # D1 데이터베이스 스키마
-└── README.md
+```bash
+wrangler dev
 ```
 
-### CLAUDE.md
+`http://localhost:8787`에서 앱을 확인할 수 있습니다.
 
-Claude Code가 자동으로 참조하는 프로젝트 가이드입니다:
-- 프로젝트 구조 및 기술 스택
-- 주요 명령어 (`npm run dev`, `npm run deploy`, `npm run test`)
-- 새 기능 추가 순서 (서비스 → 라우트 → 등록 → OpenAPI)
-- 슬래시 커맨드 (`/endpoint`, `/service`, `/review`, `/test`)
-- 세부 규칙은 `docs/` 폴더 참조
+## 3단계: AI에게 요청하기
 
-### .claude/ 폴더
+프로젝트가 실행되면 Claude Code에게 자연어로 요청합니다:
 
-Claude Code가 자동으로 활용하는 설정 파일들입니다:
+```
+"사용자 목록 페이지를 만들어줘. /api/users에서 데이터를 가져와서 테이블로 보여줘."
+```
 
-**rules/architecture.md** - 아키텍처 규칙 (대화 시 자동 적용):
-- Request → Middleware → Route → Service → Response 흐름
-- 서비스 클래스 패턴 (`constructor(env)`)
-- 에러 throw 패턴 (ValidationError→400, UnauthorizedError→401)
-- `process.env` 사용 금지, `c.env` / `this.env` 사용
+```
+"로그인 페이지를 추가하고, 인증되지 않은 사용자는 접근할 수 없게 해줘."
+```
 
-**commands/** - 슬래시 커맨드 (`/endpoint`, `/service`, `/review`, `/test`):
-- `/endpoint` - 서비스 + 라우트 + 등록 + OpenAPI 한번에 생성
-- `/service` - 서비스 클래스 생성
-- `/review` - 프로젝트 컨벤션 기준 코드 리뷰
-- `/test` - 지정 기능에 대한 테스트 작성
+```
+"갤러리 페이지를 추가해줘. 이미지를 그리드로 보여주고 클릭하면 크게 볼 수 있게."
+```
 
-**templates/** - 코드 생성 시 참조하는 표준 템플릿:
-- route.md: CRUD 라우트 패턴 (Hono 라우터, 입력 검증, 인증 정보 접근)
-- service.md: 서비스 클래스 패턴 (D1 쿼리, KV 캐시 적용)
-- test.md: 테스트 패턴 (라우트 통합 테스트, 서비스 단위 테스트)
+AI가 `app/pages/`에 프론트엔드 페이지를, `server/api/`와 `server/dao/`에 백엔드 API를 자동으로 생성합니다.
 
-### docs/ (세부 개발 가이드)
+## 알아두면 좋은 핵심 개념
 
-| 파일 | 내용 |
+### 파일 = URL
+
+`app/pages/` 폴더에 파일을 만들면 자동으로 URL이 됩니다:
+
+| 파일 | URL |
+|------|-----|
+| `pages/index.vue` | `/` |
+| `pages/about.vue` | `/about` |
+| `pages/users/index.vue` | `/users` |
+| `pages/users/[id].vue` | `/users/:id` (동적) |
+
+### 프론트엔드 + 백엔드 분리
+
+| 폴더 | 역할 |
 |------|------|
-| project-structure.md | 폴더 구조, 파일별 역할 |
-| coding-conventions.md | 네이밍, Export 패턴, 코드 스타일 |
-| architecture.md | 레이어 구조, 서비스/라우트 패턴 |
-| cloudflare-bindings.md | KV, D1, R2 사용법 |
-| authentication.md | JWT, 공개 경로, 사용자 정보 접근 |
-| environment.md | .dev.vars, Wrangler Secrets |
-| error-handling.md | 에러 throw 패턴, 상태코드 매핑 |
-| adding-features.md | 엔드포인트/서비스 추가 순서 |
+| `app/` | 프론트엔드 — 사용자에게 보이는 화면 |
+| `server/` | 백엔드 — API, 데이터베이스 처리 |
 
-## 2. 기술 스택
+### 자동 등록 (Hook)
 
-| 구성 요소 | 버전 | 용도 |
-|-----------|------|------|
-| Hono | ^4.0.0 | 웹 프레임워크 |
-| jose | ^5.2.0 | JWT 인증 |
-| @hono/swagger-ui | ^0.2.0 | API 문서 |
-| Wrangler | ^3.0.0 | CLI 및 개발 서버 |
-| Vitest | ~3.2.0 | 테스트 프레임워크 |
-
-## 3. wrangler.toml
-
-```toml
-name = "workers-template"
-main = "src/index.js"
-compatibility_date = "2024-01-01"
-
-[vars]
-ENVIRONMENT = "development"
-
-[env.dev]
-name = "workers-template-dev"
-vars = { ENVIRONMENT = "development" }
-
-[env.production]
-name = "workers-template-prod"
-vars = { ENVIRONMENT = "production" }
-
-# 필요 시 주석 해제
-# [[kv_namespaces]]
-# binding = "KV"
-# id = "your-kv-namespace-id"
-
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "your-database"
-# database_id = "your-database-id"
-
-# [[r2_buckets]]
-# binding = "BUCKET"
-# bucket_name = "your-bucket"
-```
-
-## 4. 로컬 개발 서버 실행
+AI가 `.vue` 파일이나 API 파일을 생성하면 **Hook이 자동으로 등록 파일을 갱신**합니다. 직접 파일을 추가한 경우에만 수동 실행이 필요합니다:
 
 ```bash
-npm run dev
+npm run scan    # pages.json, components.json, _registry.js 갱신
 ```
 
-**접속:**
-- API: `http://localhost:8787`
-- Swagger 문서: `http://localhost:8787/docs`
-- Health 체크: `http://localhost:8787/health`
+## 주요 명령어
 
-**테스트 계정:**
-- admin / admin123 (role: admin)
-- user / user123 (role: user)
-
-### 환경 변수 (.dev.vars)
-
-로컬 개발 시 `.dev.vars` 파일 생성:
-
-```
-JWT_SECRET=your-dev-secret-key
-```
-
-> Wrangler가 `.dev.vars`를 자동 로드합니다.
-
-### 테스트 실행
-
-```bash
-npm run test          # 단일 실행
-npm run test:watch    # 감시 모드
-```
-
-## 5. 프로젝트 커스터마이즈
-
-### 기존 라우트 수정
-
-`src/routes/`의 auth.js, users.js를 프로젝트에 맞게 변경.
-
-### 새 기능 추가 순서
-
-1. `src/services/`에 서비스 클래스 생성
-2. `src/routes/`에 라우트 핸들러 생성 (Hono 라우터 default export)
-3. `src/index.js`에 `app.route()` 등록
-4. `src/openapi.js`에 API 스펙 업데이트
-
-> 라우팅 및 서비스 패턴은 [라우팅](workers-routing.md) 참고.
+| 명령어 | 설명 |
+|--------|------|
+| `wrangler dev` | 로컬 개발 서버 실행 |
+| `wrangler deploy` | 프로덕션 배포 |
+| `npm run scan` | 페이지/컴포넌트 등록 목록 자동 갱신 |
+| `npm run test` | E2E 테스트 실행 |
 
 ## 체크리스트
 
-- [ ] workers-template 클론 완료
-- [ ] npm install 완료
-- [ ] .dev.vars 생성 (JWT_SECRET)
-- [ ] CLAUDE.md 및 docs/ 숙지
-- [ ] 로컬 서버 작동 확인 (`npm run dev`)
-- [ ] Swagger 문서 확인 (`/docs`)
-- [ ] 테스트 통과 확인 (`npm run test`)
+- [ ] vue-zero-template 클론 완료
+- [ ] `npm install` 완료
+- [ ] 로컬 서버 작동 확인 (`wrangler dev`)
+- [ ] 첫 페이지 추가 요청 (AI에게)
+- [ ] `npm run scan` 실행
 
 ## 문제 해결
 
+### 페이지가 표시되지 않음
+
+- `npm run scan` 실행하여 `pages.json` 갱신
+- 브라우저 콘솔에서 에러 확인
+
 ### 로컬 서버 실행 실패
 
-**증상:** `Error: Could not resolve "src/index.js"`
-
-**해결:**
-- wrangler.toml의 `main` 경로 확인
 - `npm install` 실행 여부 확인
+- `wrangler.toml`의 `main` 경로 확인
 
-### JWT 인증 오류
+### API 호출이 404 반환
 
-**증상:** `401 Unauthorized`
-
-**해결:**
-- `.dev.vars`에 JWT_SECRET 설정 여부 확인
-- Authorization 헤더 형식: `Bearer <token>`
-
-### 배포 실패
-
-**증상:** `Error: Authentication error`
-
-**해결:**
-- `wrangler login` 재실행
-- Cloudflare 계정 권한 확인
+- `wrangler.toml`의 `run_worker_first = ["/api/*"]` 설정 확인
+- API 경로가 `/api/`로 시작하는지 확인
 
 ## 관련 문서
 
-- [라우팅](workers-routing.md)
+- [프로젝트 구조](workers-structure.md)
 - [배포](workers-deployment.md)
-- [프로젝트 구조 표준](project-structure.md)
+
+[← 목차로 돌아가기](../_sidebar.md)

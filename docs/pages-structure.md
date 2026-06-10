@@ -203,4 +203,3 @@ index.html (루트)
 ## 관련 문서
 
 - [프로젝트 시작하기](pages-getting-started.md)
-- [프로젝트 구조 표준](project-structure.md)

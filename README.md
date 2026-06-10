@@ -146,7 +146,6 @@ Claude Code를 열고 물어보세요:
 ### ⚙️ 설정
 - [.claude/rules 작성](docs/claude-rules.md) - 코딩 규칙 정의
 - [CLAUDE.md 작성](docs/claude-md.md) - 프로젝트 개요
-- [.claude/memory 활용](docs/claude-memory.md) - 작업 이력 관리
 - [.claude/commands 활용](docs/claude-commands.md) - 슬래시 커맨드
 - [MCP 서버 설정](docs/mcp-setup.md) - 사내 문서 연동
 

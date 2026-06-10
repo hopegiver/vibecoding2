@@ -272,4 +272,3 @@ git push -u origin main
 - [프로젝트 구조](pages-structure.md)
 - [ViewLogic 사용법](pages-viewlogic.md)
 - [빌드 및 배포](pages-deployment.md)
-- [프로젝트 구조 표준](project-structure.md)

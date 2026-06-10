@@ -1,6 +1,6 @@
-# Cloudflare Workers - 배포
+# Vue Zero - 배포
 
-Workers 배포, 환경 설정, 모니터링 방법을 안내합니다.
+Vue Zero + Cloudflare Workers 풀스택 앱의 배포, 환경 설정, 모니터링 방법을 안내합니다.
 
 ## 배포
 
@@ -8,26 +8,45 @@ Workers 배포, 환경 설정, 모니터링 방법을 안내합니다.
 
 ```bash
 # 프로덕션 배포
-npm run deploy
-
-# 또는
-npx wrangler deploy
+wrangler deploy
 
 # 특정 환경
-npx wrangler deploy --env production
+wrangler deploy --env production
 ```
 
 ### 버전 관리
 
 ```bash
 # 배포 이력 확인
-npx wrangler deployments list
+wrangler deployments list
 
 # 롤백
-npx wrangler rollback <deployment-id>
+wrangler rollback <deployment-id>
 ```
 
 ## 환경 설정
+
+### wrangler.toml
+
+```toml
+name = "my-app"
+main = "server/index.js"
+compatibility_date = "2024-01-01"
+
+[assets]
+directory = "./app"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[vars]
+ENVIRONMENT = "development"
+
+[env.production]
+name = "my-app-prod"
+vars = { ENVIRONMENT = "production" }
+```
+
+> `[assets]` 섹션이 vue-zero의 핵심 설정입니다. `app/` 폴더를 정적 파일로 서빙하고, `/api/*` 요청만 Worker가 처리합니다.
 
 ### 환경 변수
 
@@ -35,7 +54,6 @@ npx wrangler rollback <deployment-id>
 
 ```
 JWT_SECRET=your-dev-secret-key
-OPENAI_API_KEY=sk-xxx
 ```
 
 **프로덕션:** Wrangler secrets
@@ -48,45 +66,24 @@ wrangler secret put JWT_SECRET --env production
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
-### wrangler.toml 환경 분리
-
-```toml
-name = "workers-template"
-main = "src/index.js"
-compatibility_date = "2024-01-01"
-
-[vars]
-ENVIRONMENT = "development"
-
-[env.dev]
-name = "workers-template-dev"
-vars = { ENVIRONMENT = "development" }
-
-[env.production]
-name = "workers-template-prod"
-vars = { ENVIRONMENT = "production" }
-```
-
 ### 바인딩 설정 (필요 시)
 
 ```toml
+# D1 데이터베이스
+[[d1_databases]]
+binding = "DB"
+database_name = "my-database"
+database_id = "your-database-id"
+
 # KV 네임스페이스
 [[kv_namespaces]]
 binding = "KV"
 id = "your-kv-namespace-id"
-preview_id = "your-preview-kv-namespace-id"
-
-# D1 데이터베이스
-[[d1_databases]]
-binding = "DB"
-database_name = "your-database"
-database_id = "your-database-id"
 
 # R2 버킷
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "your-bucket"
-preview_bucket_name = "your-preview-bucket"
 ```
 
 ## 커스텀 도메인
@@ -95,10 +92,10 @@ preview_bucket_name = "your-preview-bucket"
 
 ```toml
 [env.production]
-route = { pattern = "api.example.com/*", zone_name = "example.com" }
+route = { pattern = "app.example.com/*", zone_name = "example.com" }
 ```
 
-### 대시보드
+### Cloudflare 대시보드
 
 1. Workers → 프로젝트 선택
 2. Triggers → Custom Domains
@@ -110,13 +107,13 @@ route = { pattern = "api.example.com/*", zone_name = "example.com" }
 
 ```bash
 # 전체 로그
-npx wrangler tail
+wrangler tail
 
 # 에러만
-npx wrangler tail --status error
+wrangler tail --status error
 
 # 특정 메서드
-npx wrangler tail --method POST
+wrangler tail --method POST
 ```
 
 ### Cloudflare 대시보드
@@ -131,7 +128,7 @@ npx wrangler tail --method POST
 ### GitHub Actions
 
 ```yaml
-name: Deploy Worker
+name: Deploy
 
 on:
   push:
@@ -147,12 +144,45 @@ jobs:
           node-version: '18'
       - run: npm install
       - run: npm run test
-      - run: npx wrangler deploy --env production
+      - run: wrangler deploy --env production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 ```
 
+## 배포 전 체크리스트
+
+- [ ] `npm run scan`으로 pages.json / components.json 최신화
+- [ ] 로컬에서 `wrangler dev`로 동작 확인
+- [ ] `.dev.vars`의 시크릿을 프로덕션에 등록 (`wrangler secret put`)
+- [ ] `wrangler.toml`의 `name`, 바인딩 ID 프로덕션 값 확인
+- [ ] 배포 실행 (`wrangler deploy`)
+- [ ] 프로덕션 URL에서 동작 확인
+
+## 문제 해결
+
+### 배포 실패
+
+**증상:** `Error: Authentication error`
+
+**해결:**
+- `wrangler login` 재실행
+- Cloudflare 계정 권한 확인
+
+### 정적 파일이 서빙되지 않음
+
+**해결:**
+- `wrangler.toml`의 `[assets]` → `directory` 경로 확인
+- `not_found_handling = "single-page-application"` 설정 확인
+
+### API 호출이 프론트엔드 HTML을 반환
+
+**해결:**
+- `wrangler.toml`의 `run_worker_first = ["/api/*"]` 설정 확인
+- API 경로가 `/api/`로 시작하는지 확인
+
 ## 관련 문서
 
 - [시작하기](workers-getting-started.md)
-- [라우팅](workers-routing.md)
+- [프로젝트 구조](workers-structure.md)
+
+[← 목차로 돌아가기](../_sidebar.md)
